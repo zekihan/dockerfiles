@@ -1,0 +1,5 @@
+---
+nonce: 1
+version: 0.8.1 # renovate: depName=tierpod/dmarc-report-converter
+sourceVersion: 0.8.1 # renovate: depName=tierpod/dmarc-report-converter
+arch: linux/amd64,linux/arm64

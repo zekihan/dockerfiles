@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "github>zekihan/renovate-config"
+  ],
+  "hostRules": [
+    {
+      "hostType": "docker",
+      "matchHost": "docker.io",
+      "username": "zekihan",
+      "password": "{{ secrets.docker_io }}"
+    },
+    {
+      "hostType": "github",
+      "token": "{{ secrets.github }}"
+    }
+  ]
+}

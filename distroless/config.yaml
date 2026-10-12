@@ -1,0 +1,4 @@
+---
+nonce: 1
+version: 1.0.0
+arch: linux/amd64,linux/arm64

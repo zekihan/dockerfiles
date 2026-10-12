@@ -1,0 +1,45 @@
+input:
+  delete: no
+  dir: "/tmp/dmarc_files/"
+  #imap:
+  #  server: ""
+  #  username: ""
+  #  password: ""
+  #  mailbox: ""
+  # enable debug messages for imap package?
+  #  debug: no
+  # delete emails from server after fetch?
+  #  delete: no
+  # connection security should be: tls (default), starttls, plaintext
+  #  security: "tls"
+
+output:
+  # output file
+  # should be: string, golang template string or "stdout"
+  file: "/tmp/html/{{ .ID }}.html"
+  # file: "/tmp/html/{{ .ReportMetadata.Email }}/{{ .PolicyPublished.Domain }}!{{.ReportMetadata.DateRange.Begin}}!{{ .ReportMetadata.ReportID }}.html"
+
+  # output format
+  # should be: txt, json, html_static, html, external_template
+  format: "html_static"
+
+  # if you configure format to "html" output, don't forget to configure assets_path and your web server
+  # assets_path: "./assets"
+
+  # if you configure format to "external_output", don't forget to configure external_template
+  external_template: "/path/to/your/txt.gotmpl"
+
+# perform reverse lookups?
+lookup_addr: no
+
+# limit lookup pool size; must be positive; default = 50
+#lookup_limit: 50
+
+# merge multiple similar reports to one?
+merge_reports: yes
+
+# Go template string used to generate a key to merge reports.
+#merge_key: "{{ .ReportMetadata.OrgName }}!{{ .ReportMetadata.Email }}!{{ .PolicyPublished.Domain }}"
+
+log_debug: no
+log_datetime: no
