@@ -9,6 +9,11 @@ RUN revision=$(sed -n "s/^sourceRevision: //p" /build-config.yaml) \
     && git init && git remote add origin https://github.com/ProtonMail/proton-bridge.git \
     && git fetch --depth 1 origin "$revision" \
     && git checkout --detach FETCH_HEAD
+COPY patches/ /patches/
+RUN git apply --check /patches/listen-address.patch \
+    && git apply /patches/listen-address.patch \
+    && gofmt -w internal/services/imapsmtpserver/listener*.go \
+    && go test ./internal/services/imapsmtpserver -run 'Test(Configured|Invalid)ListenerAddress' -count=1
 RUN make build-nogui
 
 FROM debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587
@@ -17,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 COPY --from=build /src/bridge /src/proton-bridge /protonmail/
 COPY entrypoint.sh /setup/bridge.sh
 COPY licenses/ /usr/share/licenses/dockerfiles/
+COPY patches/ /usr/share/licenses/dockerfiles/patches/
 ENV HOME=/root
 ENTRYPOINT ["bash", "/setup/bridge.sh"]
 CMD ["serve"]

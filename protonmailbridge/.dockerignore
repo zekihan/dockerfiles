@@ -4,3 +4,5 @@
 !entrypoint.sh
 !licenses/
 !licenses/**
+!patches/
+!patches/**

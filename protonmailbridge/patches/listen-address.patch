@@ -1,0 +1,68 @@
+--- a/internal/services/imapsmtpserver/listener.go
++++ b/internal/services/imapsmtpserver/listener.go
+@@ -21,13 +21,23 @@
+ 	"crypto/tls"
+ 	"fmt"
+ 	"net"
++	"os"
++	"strconv"
+ 
+ 	"github.com/ProtonMail/proton-bridge/v3/internal/constants"
+ )
+ 
+ func newListener(port int, useTLS bool, tlsConfig *tls.Config) (net.Listener, error) {
++	host := os.Getenv("BRIDGE_LISTEN_ADDRESS")
++	if host == "" {
++		host = constants.Host
++	}
++	if net.ParseIP(host) == nil {
++		return nil, fmt.Errorf("BRIDGE_LISTEN_ADDRESS must be an IP address, got %q", host)
++	}
++	address := net.JoinHostPort(host, strconv.Itoa(port))
+ 	if useTLS {
+-		tlsListener, err := tls.Listen("tcp", fmt.Sprintf("%v:%v", constants.Host, port), tlsConfig)
++		tlsListener, err := tls.Listen("tcp", address, tlsConfig)
+ 		if err != nil {
+ 			return nil, err
+ 		}
+@@ -35,7 +45,7 @@
+ 		return tlsListener, nil
+ 	}
+ 
+-	netListener, err := net.Listen("tcp", fmt.Sprintf("%v:%v", constants.Host, port))
++	netListener, err := net.Listen("tcp", address)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+--- /dev/null
++++ b/internal/services/imapsmtpserver/listener_address_test.go
+@@ -0,0 +1,29 @@
++package imapsmtpserver
++
++import (
++ "crypto/tls"
++ "net"
++ "testing"
++)
++
++func TestConfiguredListenerAddress(t *testing.T) {
++ for _, host := range []string{"", "127.0.0.1", "0.0.0.0"} {
++  for _, encrypted := range []bool{false, true} {
++   t.Run(host+map[bool]string{false:"/plain",true:"/tls"}[encrypted], func(t *testing.T) {
++    t.Setenv("BRIDGE_LISTEN_ADDRESS", host)
++    listener, err := newListener(0, encrypted, &tls.Config{Certificates: []tls.Certificate{{}}})
++    if err != nil { t.Fatal(err) }
++    defer listener.Close()
++    ip := listener.Addr().(*net.TCPAddr).IP
++    if host == "0.0.0.0" { if !ip.IsUnspecified() { t.Fatalf("expected wildcard, got %s", ip) } } else if !ip.IsLoopback() { t.Fatalf("expected loopback, got %s", ip) }
++   })
++  }
++ }
++}
++
++func TestInvalidListenerAddress(t *testing.T) {
++ for _, host := range []string{"bridge.example", "127.0.0.1:1143", " 0.0.0.0"} {
++  t.Setenv("BRIDGE_LISTEN_ADDRESS", host)
++  if listener, err := newListener(0, false, nil); err == nil { listener.Close(); t.Fatalf("accepted invalid address %q", host) }
++ }
++}

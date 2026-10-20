@@ -9,7 +9,7 @@ Initialize interactively (use the same image tag for all commands):
 ```sh
 docker run --rm -it --name proton-bridge-init \
   -v proton-bridge-state:/root -v proton-bridge-certs:/bridge-certs \
-  ghcr.io/zekihan/protonmailbridge:3.27.1 init
+  ghcr.io/zekihan/protonmailbridge:3.27.1-r1 init
 ```
 
 Run `login`, `info`, then `cert export`; export to `/root/tls-export`, then `exit`.
@@ -19,7 +19,7 @@ Only the public certificate is copied into `/bridge-certs/cert.pem`.
 ```sh
 docker run -d --name proton-bridge --restart unless-stopped \
   -v proton-bridge-state:/root -v proton-bridge-certs:/bridge-certs \
-  ghcr.io/zekihan/protonmailbridge:3.27.1
+  ghcr.io/zekihan/protonmailbridge:3.27.1-r1
 ```
 
 Bridge listens on loopback. Run the client with `--network container:proton-bridge`
@@ -39,3 +39,19 @@ To build locally: `docker build -t local/protonmailbridge protonmailbridge`.
 Update config.yaml version and sourceRevision together for upstream upgrades.
 Base images are digest pinned. The workflow follows the repository's version,
 latest, and run-number tag conventions. See [licenses](licenses/NOTICE.md).
+
+## Direct network access
+
+The source patch `patches/listen-address.patch` adds `BRIDGE_LISTEN_ADDRESS`.
+Unset or empty keeps the upstream loopback default. Set it to `0.0.0.0` to
+listen on IPv4 Pod interfaces, or `::` for IPv6. Only literal IP addresses are
+accepted; invalid values fail listener creation. This affects both IMAP and SMTP.
+No TCP proxy is needed. Expose only the IMAP port through an internal Service,
+and restrict inbound access with a NetworkPolicy.
+
+Changing the bind address does not change the certificate identity. For a
+Kubernetes Service, use `cert import` in the setup CLI to import a certificate
+and private key whose SAN includes the Service DNS name. Trust the issuing CA
+in Mailvault and keep hostname verification enabled. Restart Bridge after import.
+The image build applies the patch strictly and runs listener regression tests
+before compiling. Upstream revisions that no longer accept the patch fail the build.
