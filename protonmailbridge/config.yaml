@@ -1,0 +1,5 @@
+# Update version and sourceRevision together after reviewing the upstream release.
+version: 3.27.1
+sourceRevision: 43b9237786204a0215abfd4dcc51ee7bb92f52d4
+arch: linux/amd64,linux/arm64
+nonce: 0

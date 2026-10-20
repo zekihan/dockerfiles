@@ -20,3 +20,5 @@ The Crunchy image uses software from the Crunchy Data Developer Program, whose
 terms restrict redistribution. Publishing remains enabled. The notice is not
 permission to redistribute; obtain an applicable agreement before distributing
 the image to third parties.
+
+- [Proton Mail Bridge](protonmailbridge/README.md) ([notices](protonmailbridge/licenses/NOTICE.md))
