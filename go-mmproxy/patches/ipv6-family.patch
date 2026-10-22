@@ -1,0 +1,78 @@
+--- a/internal/tcp/tcp.go
++++ b/internal/tcp/tcp.go
+@@ -160,6 +160,8 @@
+ 		if proxyHeaderSrcAddr.Addr().Is4() {
+ 			return config.Opts.TargetAddr4
+ 		}
++
++		return config.Opts.TargetAddr6
+ 	}
+ 
+ 	if frontendRemoteAddr.Addr().Is4() {
+--- /dev/null
++++ b/internal/tcp/tcp_family_test.go
+@@ -0,0 +1,64 @@
++package tcp
++
++import (
++	"net/netip"
++	"testing"
++
++	"github.com/kzemek/go-mmproxy/internal/utils"
++)
++
++func TestChooseTargetAddrFamily(t *testing.T) {
++	tests := []struct {
++		name        string
++		source      netip.AddrPort
++		destination netip.AddrPort
++		frontend    netip.AddrPort
++		dynamic     bool
++		want        netip.AddrPort
++	}{
++		{
++			name:     "PROXY TCP6 over IPv4 frontend selects IPv6 backend",
++			source:   netip.MustParseAddrPort("[2001:db8::1]:56324"),
++			frontend: netip.MustParseAddrPort("192.0.2.10:40000"),
++			want:     netip.MustParseAddrPort("[::1]:23231"),
++		},
++		{
++			name:     "PROXY TCP4 over IPv6 frontend selects IPv4 backend",
++			source:   netip.MustParseAddrPort("192.0.2.1:56324"),
++			frontend: netip.MustParseAddrPort("[2001:db8::10]:40000"),
++			want:     netip.MustParseAddrPort("127.0.0.1:23231"),
++		},
++		{
++			name:     "no PROXY source uses IPv4 frontend family",
++			frontend: netip.MustParseAddrPort("192.0.2.10:40000"),
++			want:     netip.MustParseAddrPort("127.0.0.1:23231"),
++		},
++		{
++			name:     "no PROXY source uses IPv6 frontend family",
++			frontend: netip.MustParseAddrPort("[2001:db8::10]:40000"),
++			want:     netip.MustParseAddrPort("[::1]:23231"),
++		},
++		{
++			name:        "dynamic destination remains authoritative",
++			source:      netip.MustParseAddrPort("[2001:db8::1]:56324"),
++			destination: netip.MustParseAddrPort("[2001:db8::20]:23231"),
++			frontend:    netip.MustParseAddrPort("192.0.2.10:40000"),
++			dynamic:     true,
++			want:        netip.MustParseAddrPort("[2001:db8::20]:23231"),
++		},
++	}
++
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			config := utils.Config{Opts: &utils.Options{
++				TargetAddr4:        netip.MustParseAddrPort("127.0.0.1:23231"),
++				TargetAddr6:        netip.MustParseAddrPort("[::1]:23231"),
++				DynamicDestination: tt.dynamic,
++			}}
++			got := chooseTargetAddr(tt.source, tt.destination, tt.frontend, config)
++			if got != tt.want {
++				t.Fatalf("chooseTargetAddr() = %s, want %s", got, tt.want)
++			}
++		})
++	}
++}

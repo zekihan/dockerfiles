@@ -1,19 +1,28 @@
-FROM --platform=$BUILDPLATFORM docker.io/alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25@sha256:699337d620559a59b4a2bb298ad59611e535d2ee755a34cf2d2a98f37578dc80 AS builder
 
 ARG TARGETARCH
+ARG SOURCE_REVISION=e5c3c990eed960dacd34038c088d6ce4c4b35c97
 
-RUN apk add --no-cache ca-certificates curl yq-go
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y git \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY config.yaml /build/config.yaml
+COPY patches/ipv6-family.patch /build/ipv6-family.patch
 
-RUN case "$TARGETARCH" in amd64|arm64) ;; *) echo 'Unsupported mmproxy architecture' >&2; exit 1 ;; esac \
-    && version=$(yq '.version' /build/config.yaml) \
-    && checksum=$(yq ".checksums.${TARGETARCH}" /build/config.yaml) \
-    && curl --fail --show-error --location --retry 3 --connect-timeout 10 --max-time 120 \
-        --proto '=https' --proto-redir '=https' \
-        -o /go-mmproxy \
-        "https://github.com/kzemek/go-mmproxy/releases/download/v${version}/go-mmproxy-v${version}-linux-${TARGETARCH}" \
-    && printf '%s  %s\n' "$checksum" /go-mmproxy | sha256sum -c - \
+RUN set -eu \
+    && grep -Fx "sourceRevision: ${SOURCE_REVISION}" /build/config.yaml \
+    && git init /src \
+    && cd /src \
+    && git remote add origin https://github.com/kzemek/go-mmproxy.git \
+    && git fetch --depth 1 origin "${SOURCE_REVISION}" \
+    && git checkout --detach FETCH_HEAD \
+    && test "$(git rev-parse HEAD)" = "${SOURCE_REVISION}" \
+    && git apply /build/ipv6-family.patch \
+    && test "$(git diff --name-only)" = "internal/tcp/tcp.go" \
+    && test "$(git ls-files --others --exclude-standard)" = "internal/tcp/tcp_family_test.go" \
+    && go test ./internal/tcp -run TestChooseTargetAddrFamily -count=1 \
+    && CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" go build -trimpath -ldflags='-s -w' -o /go-mmproxy . \
     && chmod 0555 /go-mmproxy
 
 FROM scratch AS final
@@ -30,4 +39,4 @@ LABEL org.opencontainers.image.authors="zekihan@noqer.com" \
     org.opencontainers.image.vendor="Zekihan AZMAN" \
     org.opencontainers.image.licenses="BSD-3-Clause" \
     org.opencontainers.image.title="go-mmproxy" \
-    org.opencontainers.image.description="Static go-mmproxy binary for preserving client addresses behind PROXY protocol."
+    org.opencontainers.image.description="Static go-mmproxy with PROXY source-family backend selection for transparent IPv6 client forwarding."
