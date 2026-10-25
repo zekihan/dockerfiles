@@ -15,8 +15,10 @@ RUN apk update && \
         yq-go
 
 COPY config.yaml config.yaml
+COPY verify-source.sh /usr/local/bin/verify-source.sh
 
 RUN export VERSION=$(yq '.sourceVersion' config.yaml) && \
+    SOURCE_COMMIT=$(yq '.sourceCommit' config.yaml) && \
     export GOOS="linux" && export CGO_ENABLED=0 && \
     case ${TARGETPLATFORM} in \
         "linux/amd64")    ARCH="amd64"          ;; \
@@ -29,8 +31,8 @@ RUN export VERSION=$(yq '.sourceVersion' config.yaml) && \
         "linux/arm/v6")   ARCH="arm"; ARM="6"   ;; \
     esac && \
     export GOARCH="${ARCH}" && export GOARM="${ARM}" && \
-    rm -rf "/tmp/repo" && mkdir -p "/tmp/repo" && cd "/tmp/repo" && \
-    git clone https://github.com/tierpod/dmarc-report-converter.git --branch=v"${VERSION}" --depth=1 .>/dev/null && \
+    sh /usr/local/bin/verify-source.sh https://github.com/tierpod/dmarc-report-converter.git "$VERSION" "$SOURCE_COMMIT" /tmp/repo && \
+    cd /tmp/repo && \
     go build -mod=vendor -ldflags="-s -w -X \"main.version=${VERSION}\"" -o "/usr/bin/dmarc-report-converter" ./cmd/dmarc-report-converter
 
 RUN mkdir -p /licenses/dmarc-report-converter /licenses/go \
@@ -46,6 +48,7 @@ FROM docker.io/busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8
 COPY --from=certs /etc/ssl/certs /etc/ssl/certs
 COPY --from=builder /usr/bin/dmarc-report-converter /usr/bin/dmarc-report-converter
 COPY ./entrypoint.sh ./entrypoint.sh
+COPY --from=builder /tmp/repo/source-revision /usr/share/dmarc-report-converter/source-revision
 COPY --from=certs /licenses/ /usr/share/licenses/dockerfiles/
 COPY --from=builder /licenses/ /usr/share/licenses/dockerfiles/
 COPY licenses/ /usr/share/licenses/dockerfiles/

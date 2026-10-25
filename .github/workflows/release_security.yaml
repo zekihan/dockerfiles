@@ -1,0 +1,31 @@
+name: Release security regression tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - '.github/scripts/install_build_deps.sh'
+      - 'dmarc-report-converter/**'
+      - 'tests/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/scripts/install_build_deps.sh'
+      - 'dmarc-report-converter/**'
+      - 'tests/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - run: bash .github/scripts/install_build_deps.sh
+      - run: python3 -m unittest discover -s tests -v
+      - run: shellcheck dmarc-report-converter/verify-source.sh
