@@ -15,19 +15,28 @@ concurrency:
 
 permissions:
   contents: read
-  packages: write
 
 env:
   repository: go-mmproxy
-  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
 jobs:
   build_push:
+    # Gate the entire credentialed job before any checkout, login or push.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+      packages: write
     runs-on: ubuntu-latest
     steps:
       - name: Check Out The Repo
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Record build revision
+        run: |
+          printf 'Build revision: %s\n' "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install build dependencies
         run: |
@@ -53,9 +62,10 @@ jobs:
         uses: docker/metadata-action@v6.2.0
         with:
           images: |
-            docker.io/${{ env.DOCKER_USERNAME }}/${{ env.repository}}
+            docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.repository}}
             ghcr.io/${{ github.repository_owner }}/${{ env.repository }}
           labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.licenses=BSD-3-Clause
           flavor: |
             latest=false
@@ -74,8 +84,8 @@ jobs:
         uses: docker/login-action@v4.6.0
         with:
           registry: docker.io
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
           logout: true
 
       - name: Login to GHCR

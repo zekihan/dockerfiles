@@ -2,4 +2,6 @@
 nonce: 1
 version: 0.8.1 # renovate: depName=tierpod/dmarc-report-converter
 sourceVersion: 0.8.1 # renovate: depName=tierpod/dmarc-report-converter
+# Update alongside sourceVersion after reviewing the upstream release.
+sourceCommit: 50e8df571711a5f4e44354b107f3cbbc839bc4c9
 arch: linux/amd64,linux/arm64

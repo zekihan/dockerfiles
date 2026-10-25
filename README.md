@@ -1,5 +1,31 @@
 # dockerfiles
 
+## Release verification
+
+The Distroless, DMARC converter, Go-mmproxy and Proton Mail Bridge publishing
+jobs run only for pushes or manual dispatches on `refs/heads/main`. They check
+out the triggering commit, record it in the run summary and image revision label,
+and expose the Docker Hub password only to the login step. A manual dispatch on
+a branch or tag skips the entire publishing job.
+
+DMARC's `sourceVersion` and `sourceCommit` must be updated together after reviewing
+the upstream release. The build fetches the release tag and fails before checkout
+or compilation if it resolves to a different commit. The verified commit is
+stored in the image at `/usr/share/dmarc-report-converter/source-revision`.
+Renovate version updates require a reviewed commit-pin update before they build.
+
+Run `python3 -m unittest discover -s tests -v` (Git and mikefarah/yq required)
+and `shellcheck dmarc-report-converter/verify-source.sh` locally. The tests use
+temporary Git repositories to check moved tags and repeated source identity;
+they never log in to a registry or publish an image.
+
+Live acceptance still requires an authorized maintainer to dispatch each workflow
+from a non-main branch and confirm the job is skipped, then dispatch from main
+and check the recorded SHA and published tags. Protected GitHub Environment
+reviewers, branch protections and external credential scopes are operator-managed
+controls; this change does not configure or verify those settings. Environment
+setup and live publication require separate authorization.
+
 ## Licensing
 
 Original Dockerfiles, scripts, configuration, and documentation in this repository
