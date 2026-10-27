@@ -1,0 +1,17 @@
+name: Immutable Action policy
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install -r .github/scripts/requirements-policy.txt
+      - run: python3 .github/scripts/check_action_pins.py
+      - run: python3 -m unittest discover -s tests -p test_action_pins.py -v
