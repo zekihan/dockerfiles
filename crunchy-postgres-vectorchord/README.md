@@ -33,7 +33,10 @@ bash crunchy-postgres-vectorchord/smoke-test.sh local/crunchy-postgres-vectorcho
 The smoke test uses a disposable, non-root container and temporary database. It
 checks extension creation, an indexed nearest-neighbor query, restart, and logical
 backup/restore. It does not verify PGO reconciliation, replica promotion, or
-pgBackRest recovery; validate those in a disposable PGO cluster before production.
+pgBackRest recovery. The opt-in [disposable PGO harness](pgo-test/README.md)
+adds reconciliation, controlled replica promotion and physical backup/recovery
+validation; run it for the exact candidate before production promotion. See
+[remaining acceptance checks](pgo-test/TODO.md) for currently unexecuted checks.
 
 ## Build dependencies
 
