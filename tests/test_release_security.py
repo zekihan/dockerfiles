@@ -40,14 +40,16 @@ class PublishPolicyTests(unittest.TestCase):
                         with self.subTest(image=image, ref=ref, event=event):
                             self.assertEqual(allowed, ref == 'refs/heads/main' and
                                              event in ('push', 'workflow_dispatch'))
-                checkout = next(s for s in steps if 'actions/checkout@' in s.get('uses', ''))
+                build_steps = workflow['jobs']['build']['steps']
+                self.assertFalse(any('checkout@' in s.get('uses', '') for s in steps))
+                checkout = next(s for s in build_steps if 'actions/checkout@' in s.get('uses', ''))
                 self.assertEqual(checkout['with']['ref'], '${{ github.sha }}')
                 self.assertFalse(checkout['with']['persist-credentials'])
                 self.assertTrue(any('GITHUB_STEP_SUMMARY' in s.get('run', '') and
-                                    'GITHUB_SHA' in s['run'] for s in steps))
+                                    'GITHUB_SHA' in s['run'] for s in build_steps))
                 login = next(s for s in steps if s['name'] == 'Login to Docker Hub')
                 self.assertEqual(login['with']['password'], '${{ secrets.DOCKER_PASSWORD }}')
-            self.assertEqual(publication_steps, 3)
+            self.assertEqual(publication_steps, 2)
 
 
 class SourcePinTests(unittest.TestCase):

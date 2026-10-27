@@ -48,3 +48,5 @@ permission to redistribute; obtain an applicable agreement before distributing
 the image to third parties.
 
 - [Proton Mail Bridge](protonmailbridge/README.md) ([notices](protonmailbridge/licenses/NOTICE.md))
+
+Workflow security policy and local validation: [docs/workflow-security.md](docs/workflow-security.md).

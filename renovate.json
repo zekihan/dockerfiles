@@ -15,5 +15,13 @@
       "hostType": "github",
       "token": "{{ secrets.github }}"
     }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "pinDigests": true
+    }
   ]
 }
