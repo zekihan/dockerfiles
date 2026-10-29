@@ -173,7 +173,8 @@ class Harness:
             self.evidence['diagnosticsUnavailable'] = True
         if self.created:
             try:
-                run(['kind', 'delete', 'cluster', '--name', self.name], timeout=180)
+                run(['kind', 'delete', 'cluster', '--name', self.name,
+                     '--kubeconfig', self.config], timeout=180)
                 self.evidence['cleanup'] = 'passed'
             except Exception:
                 self.evidence['cleanup'] = 'failed'

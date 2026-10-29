@@ -1,7 +1,9 @@
 """Offline safety and regression tests; never contacts Kubernetes or Docker."""
 import importlib.util
 import json
+import os
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -57,7 +59,8 @@ class HarnessTests(unittest.TestCase):
         self.h.evidence['result'] = 'failed'
         with patch.object(pgo, 'run', side_effect=RuntimeError('secret error')) as run:
             self.h.finish()
-        self.assertEqual(run.call_args.args[0], ['kind', 'delete', 'cluster', '--name', self.h.name])
+        self.assertEqual(run.call_args.args[0], ['kind', 'delete', 'cluster', '--name', self.h.name,
+                                               '--kubeconfig', self.h.config])
         evidence = json.loads(self.args.output.read_text())
         self.assertEqual(evidence['cleanup'], 'failed')
         self.assertEqual(evidence['remainingKindCluster'], self.h.name)
@@ -68,6 +71,44 @@ class HarnessTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 self.h.execute()
         self.assertFalse(self.h.created)
+
+    def test_cleanup_uses_private_config_even_when_ambient_config_is_invalid(self):
+        # Model kind's config selection at the subprocess boundary. Invalid
+        # ambient config must not turn an otherwise successful cleanup into a
+        # failure, whether selected through KUBECONFIG or the default HOME path.
+        ambient = self.root / '.kube/config'
+        ambient.parent.mkdir()
+        ambient.write_text('invalid kubeconfig fixture')
+        private = Path(self.h.config)
+        private.write_text('{}')
+        self.h.created = True
+        selected = []
+
+        def kind_delete(argv, **kwargs):
+            self.assertEqual(argv[:3], ['kind', 'delete', 'cluster'])
+            self.assertEqual(argv[argv.index('--name') + 1], self.h.name)
+            config = (argv[argv.index('--kubeconfig') + 1] if '--kubeconfig' in argv
+                      else os.environ.get('KUBECONFIG', str(ambient)))
+            selected.append(config)
+            try:
+                json.loads(Path(config).read_text())
+            except ValueError:
+                return subprocess.CompletedProcess(argv, 1, '', 'invalid kubeconfig')
+            return subprocess.CompletedProcess(argv, 0, '', '')
+
+        for use_env in (False, True):
+            with self.subTest(kubeconfig_env=use_env):
+                env = {**os.environ, 'HOME': str(self.root)}
+                env.pop('KUBECONFIG', None)
+                if use_env:
+                    env['KUBECONFIG'] = str(ambient)
+                with patch.dict(os.environ, env, clear=True), \
+                        patch.object(self.h, 'k', return_value='{"items": []}'), \
+                        patch.object(pgo.subprocess, 'run', side_effect=kind_delete):
+                    self.h.finish()
+                self.assertEqual(self.h.evidence['cleanup'], 'passed')
+                self.assertEqual(selected[-1], self.h.config)
+                self.assertEqual(ambient.read_text(), 'invalid kubeconfig fixture')
 
     def test_recovery_sequence_and_non_destructive_verifier(self):
         calls = []
