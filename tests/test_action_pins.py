@@ -27,6 +27,32 @@ class ActionPinTests(unittest.TestCase):
         for fixture in ('env: {TOKEN: "${{ secrets.TOKEN }}"}', 'jobs: {publish: {env: {TOKEN: "${{ secrets.TOKEN }}"}}}', 'permissions: {contents: write}', '- uses: actions/checkout@' + 'a' * 40):
             self.assertTrue(policy.violations(fixture), fixture)
 
+    def test_indexed_secrets_cannot_bypass_scope_policy(self):
+        import yaml
+        for reference in ("${{ secrets['TOKEN'] }}", "${{ secrets [ 'TOKEN' ] }}"):
+            fixtures = (
+                {'env': {'TOKEN': reference}},
+                {'jobs': {'publish': {'env': {'TOKEN': reference}}}},
+                [{'uses': 'actions/checkout@' + 'a' * 40,
+                  'with': {'persist-credentials': False, 'token': reference}}],
+            )
+            for fixture, expected in zip(fixtures, (
+                    'publication secrets must be step scoped',
+                    'publication secrets must be step scoped',
+                    'checkout must not receive publication secrets')):
+                with self.subTest(reference=reference, fixture=fixture):
+                    self.assertIn(expected, policy.violations(yaml.safe_dump(fixture)))
+
+    def test_indexed_secrets_remain_allowed_at_publication_step(self):
+        fixture = """jobs:
+  publish:
+    steps:
+      - uses: docker/login-action@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        with:
+          password: ${{ secrets['TOKEN'] }}
+"""
+        self.assertEqual(policy.violations(fixture), [])
+
     def test_all_repository_workflows_are_immutable(self):
         paths = list((ROOT / ".github/workflows").glob("*.y*ml"))
         self.assertTrue(paths)
