@@ -25,7 +25,9 @@ if ! command -v yq >/dev/null 2>&1; then
 	sudo chmod +x "$BIN"
 fi
 if ! command -v jq >/dev/null 2>&1; then
-	sudo apt-get update && sudo apt-get install jq -y
+	sudo apt-get update
+	sudo apt-get install jq -y
 fi
 
-echo "Installed yq version: $(yq --version)"
+YQ_VERSION=$(yq --version)
+echo "Installed yq version: $YQ_VERSION"
