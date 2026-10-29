@@ -12,6 +12,7 @@ cleanup() {
 trap cleanup EXIT
 # Copy the test so the same command works with local and remote Docker engines.
 docker cp "$script_dir/smoke-test.sql" "$container:/smoke-test.sql"
+docker cp "$script_dir/pgo-test/verify.sql" "$container:/verify.sql"
 docker start -ai "$container" <<'CONTAINER'
 set -euo pipefail
 export PGDATA=/tmp/pgdata PGHOST=/tmp
@@ -30,10 +31,10 @@ test "$actual_version" = "$EXPECTED_VERSION"
 pg_dump -Fc -d postgres -f /tmp/backup.dump
 createdb restored
 pg_restore --exit-on-error -d restored /tmp/backup.dump
-test "$(psql -XAt -v ON_ERROR_STOP=1 -d restored -c 'SELECT count(*) FROM embeddings;')" = 1000
-psql -X -v ON_ERROR_STOP=1 -d restored -c "SET enable_seqscan=off; SET vchordrq.probes='1'; SELECT id FROM embeddings ORDER BY embedding <-> '[500,1,0]' LIMIT 1;"
+psql -X -v ON_ERROR_STOP=1 -d restored -f /verify.sql
 pg_ctl -m fast -w restart -l /tmp/postgres.log
-psql -X -v ON_ERROR_STOP=1 -d postgres -f /smoke-test.sql
+# Verify the persisted fixture without recreating the table or its index.
+psql -X -v ON_ERROR_STOP=1 -d postgres -f /verify.sql
 CONTAINER
 status=$(docker inspect --format '{{.State.ExitCode}}' "$container")
 test "$status" = 0
