@@ -7,6 +7,8 @@ import yaml
 
 PIN = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+@[0-9a-f]{40}\Z")
 LOCAL = re.compile(r"\./[A-Za-z0-9_./-]+\Z")
+# GitHub contexts support both secrets.NAME and secrets['NAME'] access.
+SECRET_ACCESS = re.compile(r"\bsecrets\s*(?:\.|\[)")
 
 
 def violations(text):
@@ -32,7 +34,7 @@ def violations(text):
             if isinstance(action, str) and action.startswith('actions/checkout@'):
                 if value.get('with', {}).get('persist-credentials') is not False:
                     errors.append('checkout must disable persisted credentials')
-                if 'secrets.' in str(value):
+                if SECRET_ACCESS.search(str(value)):
                     errors.append('checkout must not receive publication secrets')
         for item in value.values():
             walk(item)
@@ -40,7 +42,7 @@ def violations(text):
     walk(workflow)
     if isinstance(workflow, dict):
         for scope in [workflow, *workflow.get('jobs', {}).values()]:
-            if 'secrets.' in str(scope.get('env', {})):
+            if SECRET_ACCESS.search(str(scope.get('env', {}))):
                 errors.append('publication secrets must be step scoped')
         if any(value == 'write' for value in workflow.get('permissions', {}).values()):
             errors.append('write permissions must be job scoped')
