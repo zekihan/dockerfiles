@@ -19,11 +19,19 @@ RUN make build-nogui
 FROM debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl pass gnupg libsecret-1-0 libfido2-1 libcbor0.8 util-linux \
     && rm -rf /var/lib/apt/lists/*
+# Bridge keeps absolute paths under HOME in its encrypted vault, so the state
+# mount stays at /root and is owned by the runtime user instead of moving.
+RUN groupadd --gid 65532 bridge \
+    && useradd --uid 65532 --gid 65532 --home-dir /root --no-create-home --shell /usr/sbin/nologin bridge \
+    && chown 65532:65532 /root \
+    && chmod 0700 /root \
+    && install -d -o 65532 -g 65532 -m 0755 /bridge-certs
 COPY --from=build /src/bridge /src/proton-bridge /protonmail/
 COPY entrypoint.sh /setup/bridge.sh
 COPY licenses/ /usr/share/licenses/dockerfiles/
 COPY patches/ /usr/share/licenses/dockerfiles/patches/
 ENV HOME=/root
+USER 65532:65532
 ENTRYPOINT ["bash", "/setup/bridge.sh"]
 CMD ["serve"]
 

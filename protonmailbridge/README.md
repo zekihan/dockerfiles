@@ -9,7 +9,7 @@ Initialize interactively (use the same image tag for all commands):
 ```sh
 docker run --rm -it --name proton-bridge-init \
   -v proton-bridge-state:/root -v proton-bridge-certs:/bridge-certs \
-  ghcr.io/zekihan/protonmailbridge:3.27.1-r1 init
+  ghcr.io/zekihan/protonmailbridge:3.27.1-r2 init
 ```
 
 Run `login`, `info`, then `cert export`; export to `/root/tls-export`, then `exit`.
@@ -19,7 +19,7 @@ Only the public certificate is copied into `/bridge-certs/cert.pem`.
 ```sh
 docker run -d --name proton-bridge --restart unless-stopped \
   -v proton-bridge-state:/root -v proton-bridge-certs:/bridge-certs \
-  ghcr.io/zekihan/protonmailbridge:3.27.1-r1
+  ghcr.io/zekihan/protonmailbridge:3.27.1-r2
 ```
 
 Bridge listens on loopback. Run the client with `--network container:proton-bridge`
@@ -27,6 +27,13 @@ Bridge listens on loopback. Run the client with `--network container:proton-brid
 and trust its cert.pem. Use IMAP `127.0.0.1:1143` with STARTTLS and normal
 certificate/hostname verification. Do not disable TLS verification. No ports
 are published by these commands.
+
+The image runs as UID/GID 65532 and keeps `HOME=/root`, owned by that user. Run it
+with `--user 65532:65532` (the default) and `--cap-drop ALL`; no capabilities are
+needed. State stays at `/root` because Bridge's encrypted vault records absolute
+paths under its home directory. A state volume created by an earlier image (root
+owned) must be changed once, with Bridge stopped and without altering modes:
+`chown -R 65532:65532` on the volume. `.gnupg` must stay 0700 and the keys 0600.
 
 Persist both volumes. `/root` contains credentials, cache, and the GPG key used
 by pass. The unattended key has no passphrase: possession of the volume permits

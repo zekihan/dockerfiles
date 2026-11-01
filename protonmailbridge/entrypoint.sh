@@ -2,6 +2,15 @@
 set -euo pipefail
 umask 077
 
+if [[ "$(id -u)" == 0 ]]; then
+  echo 'Run Bridge as a non-root user (the image default is UID 65532).' >&2
+  exit 1
+fi
+if [[ ! -d /root || ! -w /root || ! -x /root ]]; then
+  echo 'Bridge state at /root is not writable by this user; chown it to the runtime UID first.' >&2
+  exit 1
+fi
+
 exec 9>/root/.mailvault-bridge.lock
 if ! flock -n 9; then
   echo "Bridge state is already in use. Stop the bridge service before initialization." >&2
