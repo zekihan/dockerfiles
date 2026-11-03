@@ -12,6 +12,10 @@ IPv6 target, independently of the mmproxy frontend peer. When no valid PROXY
 source is available, the frontend family still selects the target. Dynamic
 destination remains disabled by default and is not enabled by the patch.
 
+The patch is tracked as OPS-214 and waits on upstream
+[kzemek/go-mmproxy#39](https://github.com/kzemek/go-mmproxy/pull/39). Drop it
+once a release after v2.3.1 includes that fix.
+
 Build and inspect locally:
 
 ```sh

@@ -8,6 +8,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY config.yaml /build/config.yaml
+# WORKAROUND(OPS-214): kzemek/go-mmproxy#39, recheck after go-mmproxy > 2.3.1
+# Upstream picks the backend from the frontend family, so PROXY TCP6 over IPv4 fails.
 COPY patches/ipv6-family.patch /build/ipv6-family.patch
 
 RUN set -eu \
