@@ -1,4 +1,4 @@
-nonce: 2
 version: 2.3.1
 arch: linux/amd64,linux/arm64
 sourceRevision: e5c3c990eed960dacd34038c088d6ce4c4b35c97
+revision: 2

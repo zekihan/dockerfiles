@@ -40,15 +40,15 @@ inputs, runtime and bundled source when updating these pins.
 
 ## Build and publication boundary
 
-All five workflows build on a runner with `contents: read` and no publication
-secrets. Four images export a multi-platform OCI archive. PostgreSQL runs its
-existing smoke test and exports that exact loaded image as a Docker archive.
-The build job exports both the SHA-256 and immutable Actions artifact ID. The
-publisher downloads that specific ID from the same run and verifies the digest
-before any registry login. The publisher has no checkout or build step and uses
-`skopeo copy --all` to preserve multi-platform content (with `--preserve-digests` for OCI archives). Only it has
-`packages: write`; registry passwords are inputs to pinned login steps.
+The pinned shared image workflow builds without publication credentials and uploads
+an OCI archive with its checksum and immutable artifact ID. Postgres smoke-tests
+the native image loaded from that archive before upload. Native ARM archives are
+combined by embedded trusted code for Proton Mail Bridge. Publication downloads
+the exact artifacts, verifies their checksums, and preserves manifest digests when
+copying to both registries. Source checkout in the publisher is used for ancestry
+checks only; it never executes repository scripts.
 
-The previous main-branch/event guards remain enforced. Existing image tags,
-version/nonce behavior, labels and PostgreSQL smoke checks are preserved. Artifact
-transfer adds temporary storage/runner cost; archives expire after one day.
+Caller tests enforce check dependencies, explicit registry secrets, immutable
+shared pins and the architecture exceptions. Archive integrity, failure recovery,
+stale promotion and immutable-tag guards are tested in `release-workflows`.
+See [publication and recovery](../README.md#release-verification).
