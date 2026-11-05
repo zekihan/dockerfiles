@@ -4,7 +4,12 @@ This file provides guidance to AI Agents when working with code in this reposito
 
 ## Overview
 
-A monorepo of independent container images. Each top-level directory (`actions-runner`, `distroless`, `envsubst`, `it-tools`, `dmarc-report-converter`) is a self-contained image with its own `Dockerfile` and `config.yaml`. Adding a new image means creating a new directory plus a matching workflow.
+A monorepo of independent container images: `distroless`, `dmarc-report-converter`,
+`go-mmproxy`, `protonmailbridge`, and `crunchy-postgres-vectorchord`. Each top-level
+image directory contains its Dockerfile and build configuration. The shared
+`.github/workflows/publish.yaml` workflow handles every image; adding an image
+requires wiring its per-image decide, checks, and publish jobs into that workflow
+and its `workflow_dispatch` image option.
 
 ## Per-image structure
 
@@ -16,7 +21,7 @@ Every image directory contains:
   - `revision` — positive packaging revision; a new `version-rN` identity requests an immutable release. Use manual force for an edge-only rebuild.
   - `sourceVersion` (dmarc only) — git tag of upstream source to build from.
   - `sourceCommit` (dmarc only) — reviewed full commit that the source tag must resolve to; update alongside `sourceVersion`.
-  - `# renovate: depName=...` trailing comments on `version`/`sourceVersion` tell Renovate which upstream to track. Without this comment the version is manual (e.g. `distroless`, `envsubst` use a hand-set `1.0.0`).
+  - `# renovate: depName=...` trailing comments on `version`/`sourceVersion` tell Renovate which upstream to track. Without this comment the version is manual (for example, `distroless` uses a hand-set version).
 
 ## CI / build pipeline
 
@@ -29,11 +34,11 @@ recovery. Proton Mail Bridge uses native amd64 and arm64 runners; Postgres stays
 amd64-only and smoke-tests the prepared image before publication. Ordinary PR
 checks never build containers. Old published tags are retained.
 
-Validate image changes by building the image. To build one locally:
+Validate image changes by building the image. For example:
 
 ```sh
-docker buildx build --platform "$(yq '.arch' it-tools/config.yaml)" -t local/it-tools it-tools
-# dmarc reads config.yaml at build time, so just point at its dir:
+docker buildx build --platform "$(yq '.arch' distroless/config.yaml)" -t local/distroless distroless
+# dmarc reads config.yaml at build time, so point at its directory:
 docker build dmarc-report-converter
 ```
 
@@ -43,10 +48,11 @@ When changing build args that the Dockerfile reads from `config.yaml` (dmarc's `
 
 ## Notable per-image patterns
 
-- **distroless** — builds a `scratch` image by copying CA certs + zoneinfo out of an Alpine builder. No shell, no package manager.
-- **dmarc-report-converter** — clones the upstream Go repo at `sourceVersion` and cross-compiles with a `TARGETPLATFORM`→`GOARCH`/`GOARM` case statement. `entrypoint.sh` reads `OUTPUT_DIR`/`CONFIG_DIR`/`CONFIG_FILE` env vars.
-- **it-tools** — copies the prebuilt static site out of the upstream image into nginx-unprivileged (port 8080).
-- **actions-runner** — extends the official GitHub Actions runner with build tooling and `yq`.
+- **distroless** — builds a `scratch` image by copying CA certs and zoneinfo out of an Alpine builder. No shell or package manager.
+- **dmarc-report-converter** — clones the upstream Go repo at `sourceVersion` and cross-compiles by target platform. The tag must resolve to the reviewed `sourceCommit`.
+- **go-mmproxy** — applies the IPv6 family patch (OPS-214) and builds for the configured architectures.
+- **protonmailbridge** — builds on native amd64 and arm64 runners and runs as non-root UID 65532.
+- **crunchy-postgres-vectorchord** — amd64-only; smoke-tests the prepared artifact before publication.
 
 ## Conventions
 
