@@ -43,7 +43,7 @@ RUN mkdir -p /licenses/dmarc-report-converter /licenses/go \
     && find vendor -type f \( -iname '*license*' -o -iname '*copying*' -o -iname '*notice*' \) \
         -exec sh -c 'for path do mkdir -p "/licenses/$(dirname "$path")"; cp "$path" "/licenses/$path"; done' sh {} +
 
-FROM docker.io/busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e AS final
+FROM docker.io/busybox:1.38.0@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca60a1a59d3463db586e5fa4 AS final
 
 COPY --from=certs /etc/ssl/certs /etc/ssl/certs
 COPY --from=builder /usr/bin/dmarc-report-converter /usr/bin/dmarc-report-converter
