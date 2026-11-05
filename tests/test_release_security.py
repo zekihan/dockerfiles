@@ -15,41 +15,19 @@ def yaml(path):
 
 
 class PublishPolicyTests(unittest.TestCase):
-    def test_publication_is_restricted_to_main_and_allowed_events(self):
-        for image in IMAGES:
-            workflow = yaml(ROOT / '.github/workflows' / f'{image}_docker_build.yaml')
-            self.assertNotIn('packages', workflow['permissions'])
-            self.assertNotIn('DOCKER_PASSWORD', workflow['env'])
-            # Discover every credentialed job, so moving a login or push cannot
-            # silently escape the tested boundary.
-            publication_steps = 0
-            for job in workflow['jobs'].values():
-                steps = job['steps']
-                credentialed = [s for s in steps if 'login-action' in s.get('uses', '')
-                                or s.get('with', {}).get('push') is True]
-                publication_steps += len(credentialed)
-                if not credentialed:
-                    continue
-                guard = job['if'].replace('&&', ' and ').replace('||', ' or ')
-                for ref in ('refs/heads/main', 'refs/heads/feature', 'refs/tags/main'):
-                    for event in ('push', 'workflow_dispatch', 'pull_request',
-                                  'pull_request_target', 'schedule', 'workflow_run'):
-                        expression = guard.replace('github.ref', repr(ref)).replace(
-                            'github.event_name', repr(event))
-                        allowed = eval(expression, {'__builtins__': {}}, {})
-                        with self.subTest(image=image, ref=ref, event=event):
-                            self.assertEqual(allowed, ref == 'refs/heads/main' and
-                                             event in ('push', 'workflow_dispatch'))
-                build_steps = workflow['jobs']['build']['steps']
-                self.assertFalse(any('checkout@' in s.get('uses', '') for s in steps))
-                checkout = next(s for s in build_steps if 'actions/checkout@' in s.get('uses', ''))
-                self.assertEqual(checkout['with']['ref'], '${{ github.sha }}')
-                self.assertFalse(checkout['with']['persist-credentials'])
-                self.assertTrue(any('GITHUB_STEP_SUMMARY' in s.get('run', '') and
-                                    'GITHUB_SHA' in s['run'] for s in build_steps))
-                login = next(s for s in steps if s['name'] == 'Login to Docker Hub')
-                self.assertEqual(login['with']['password'], '${{ secrets.DOCKER_PASSWORD }}')
-            self.assertEqual(publication_steps, 2)
+    def test_publication_is_restricted_to_scheduled_or_manual_main(self):
+        workflow = yaml(ROOT / '.github/workflows/publish.yaml')
+        self.assertEqual(set(workflow['on']), {'schedule', 'workflow_dispatch'})
+        self.assertEqual(workflow['permissions'], {'contents': 'read'})
+        self.assertFalse(workflow['concurrency']['cancel-in-progress'])
+        for image in (*IMAGES, 'crunchy-postgres-vectorchord'):
+            key = image.replace('-', '_')
+            decide = workflow['jobs'][key + '_decide']
+            self.assertEqual(decide['with']['mode'], 'declarative')
+            self.assertEqual(decide['with']['version-file'], f'{image}/config.yaml')
+            self.assertEqual(decide['secrets'], {name: '${{ secrets.' + name + ' }}'
+                                               for name in ['DOCKER_USERNAME', 'DOCKER_PASSWORD']})
+            self.assertRegex(decide['uses'], r'decide.yaml@[0-9a-f]{40}$')
 
 
 class SourcePinTests(unittest.TestCase):

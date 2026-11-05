@@ -1,0 +1,248 @@
+name: Publish images
+'on':
+  schedule:
+  - cron: 47 4 * * *
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Image to publish
+        type: choice
+        options:
+        - all
+        - distroless
+        - dmarc-report-converter
+        - go-mmproxy
+        - protonmailbridge
+        - crunchy-postgres-vectorchord
+        default: all
+      force:
+        description: Rebuild unchanged inputs; never replace released versions
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: publish-${{ github.repository }}
+  cancel-in-progress: false
+jobs:
+  distroless_decide:
+    name: Decide (distroless)
+    if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'distroless' }}
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+    with:
+      image: distroless
+      mode: declarative
+      version-file: distroless/config.yaml
+      input-paths: '["distroless", ".github/workflows", ".github/scripts", "tests"]'
+      force: ${{ inputs.force || false }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  distroless_checks:
+    name: Checks (distroless)
+    needs: distroless_decide
+    if: ${{ needs.distroless_decide.outputs.build == 'true' }}
+    uses: ./.github/workflows/checks.yaml
+    permissions:
+      contents: read
+  distroless_publish:
+    name: Image (distroless)
+    needs:
+    - distroless_decide
+    - distroless_checks
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image: distroless
+      mode: declarative
+      version: ${{ needs.distroless_decide.outputs.version }}
+      fingerprint: ${{ needs.distroless_decide.outputs.fingerprint }}
+      context: distroless
+      platforms: linux/amd64,linux/arm64
+      native-arm: false
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  dmarc_report_converter_decide:
+    name: Decide (dmarc-report-converter)
+    if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'dmarc-report-converter' }}
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+    with:
+      image: dmarc-report-converter
+      mode: declarative
+      version-file: dmarc-report-converter/config.yaml
+      input-paths: '["dmarc-report-converter", ".github/workflows", ".github/scripts", "tests"]'
+      force: ${{ inputs.force || false }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  dmarc_report_converter_checks:
+    name: Checks (dmarc-report-converter)
+    needs: dmarc_report_converter_decide
+    if: ${{ needs.dmarc_report_converter_decide.outputs.build == 'true' }}
+    uses: ./.github/workflows/checks.yaml
+    permissions:
+      contents: read
+  dmarc_report_converter_publish:
+    name: Image (dmarc-report-converter)
+    needs:
+    - dmarc_report_converter_decide
+    - dmarc_report_converter_checks
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image: dmarc-report-converter
+      mode: declarative
+      version: ${{ needs.dmarc_report_converter_decide.outputs.version }}
+      fingerprint: ${{ needs.dmarc_report_converter_decide.outputs.fingerprint }}
+      context: dmarc-report-converter
+      platforms: linux/amd64,linux/arm64
+      native-arm: false
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  go_mmproxy_decide:
+    name: Decide (go-mmproxy)
+    if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'go-mmproxy' }}
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+    with:
+      image: go-mmproxy
+      mode: declarative
+      version-file: go-mmproxy/config.yaml
+      input-paths: '["go-mmproxy", ".github/workflows", ".github/scripts", "tests"]'
+      force: ${{ inputs.force || false }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  go_mmproxy_checks:
+    name: Checks (go-mmproxy)
+    needs: go_mmproxy_decide
+    if: ${{ needs.go_mmproxy_decide.outputs.build == 'true' }}
+    uses: ./.github/workflows/checks.yaml
+    permissions:
+      contents: read
+  go_mmproxy_publish:
+    name: Image (go-mmproxy)
+    needs:
+    - go_mmproxy_decide
+    - go_mmproxy_checks
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image: go-mmproxy
+      mode: declarative
+      version: ${{ needs.go_mmproxy_decide.outputs.version }}
+      fingerprint: ${{ needs.go_mmproxy_decide.outputs.fingerprint }}
+      context: go-mmproxy
+      platforms: linux/amd64,linux/arm64
+      native-arm: false
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  protonmailbridge_decide:
+    name: Decide (protonmailbridge)
+    if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'protonmailbridge' }}
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+    with:
+      image: protonmailbridge
+      mode: declarative
+      version-file: protonmailbridge/config.yaml
+      input-paths: '["protonmailbridge", ".github/workflows", ".github/scripts", "tests"]'
+      force: ${{ inputs.force || false }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  protonmailbridge_checks:
+    name: Checks (protonmailbridge)
+    needs: protonmailbridge_decide
+    if: ${{ needs.protonmailbridge_decide.outputs.build == 'true' }}
+    uses: ./.github/workflows/checks.yaml
+    permissions:
+      contents: read
+  protonmailbridge_publish:
+    name: Image (protonmailbridge)
+    needs:
+    - protonmailbridge_decide
+    - protonmailbridge_checks
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image: protonmailbridge
+      mode: declarative
+      version: ${{ needs.protonmailbridge_decide.outputs.version }}
+      fingerprint: ${{ needs.protonmailbridge_decide.outputs.fingerprint }}
+      context: protonmailbridge
+      platforms: linux/amd64,linux/arm64
+      native-arm: true
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  crunchy_postgres_vectorchord_decide:
+    name: Decide (crunchy-postgres-vectorchord)
+    if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'crunchy-postgres-vectorchord' }}
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+    with:
+      image: crunchy-postgres-vectorchord
+      mode: declarative
+      version-file: crunchy-postgres-vectorchord/config.yaml
+      input-paths: '["crunchy-postgres-vectorchord", ".github/workflows", ".github/scripts", "tests"]'
+      force: ${{ inputs.force || false }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  crunchy_postgres_vectorchord_checks:
+    name: Checks (crunchy-postgres-vectorchord)
+    needs: crunchy_postgres_vectorchord_decide
+    if: ${{ needs.crunchy_postgres_vectorchord_decide.outputs.build == 'true' }}
+    uses: ./.github/workflows/checks.yaml
+    permissions:
+      contents: read
+  crunchy_postgres_vectorchord_publish:
+    name: Image (crunchy-postgres-vectorchord)
+    needs:
+    - crunchy_postgres_vectorchord_decide
+    - crunchy_postgres_vectorchord_checks
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image: crunchy-postgres-vectorchord
+      mode: declarative
+      version: ${{ needs.crunchy_postgres_vectorchord_decide.outputs.version }}
+      fingerprint: ${{ needs.crunchy_postgres_vectorchord_decide.outputs.fingerprint }}
+      context: crunchy-postgres-vectorchord
+      platforms: linux/amd64
+      native-arm: false
+      smoke-command: bash crunchy-postgres-vectorchord/smoke-test.sh local/publishing-smoke:latest
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

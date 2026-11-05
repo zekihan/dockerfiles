@@ -62,3 +62,6 @@ and private key whose SAN includes the Service DNS name. Trust the issuing CA
 in Mailvault and keep hostname verification enabled. Restart Bridge after import.
 The image build applies the patch strictly and runs listener regression tests
 before compiling. Upstream revisions that no longer accept the patch fail the build.
+
+Packaging revisions now live in `config.yaml` as `revision`. The first unified
+release is `3.27.1-r3`; the existing `3.27.1-r2` artifact remains available.
