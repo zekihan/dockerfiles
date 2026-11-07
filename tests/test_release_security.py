@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-IMAGES = ('distroless', 'dmarc-report-converter', 'go-mmproxy', 'protonmailbridge')
+IMAGES = ('distroless', 'dmarc-report-converter', 'go-mmproxy', 'protonmailbridge', 'crowdsec-agent')
 
 
 def yaml(path):

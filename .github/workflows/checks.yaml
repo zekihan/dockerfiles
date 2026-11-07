@@ -22,4 +22,6 @@ jobs:
     - run: |
         bash -n protonmailbridge/entrypoint.sh
         bash -n crunchy-postgres-vectorchord/smoke-test.sh
-        shellcheck dmarc-report-converter/verify-source.sh crunchy-postgres-vectorchord/smoke-test.sh
+        bash -n crowdsec-agent/smoke-test.sh
+        sh -n crowdsec-agent/apply-whitelists.sh
+        shellcheck dmarc-report-converter/verify-source.sh crunchy-postgres-vectorchord/smoke-test.sh crowdsec-agent/smoke-test.sh crowdsec-agent/apply-whitelists.sh

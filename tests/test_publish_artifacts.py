@@ -10,7 +10,7 @@ class PublicationTests(unittest.TestCase):
     def test_every_publisher_depends_on_checks_and_the_pinned_decision(self):
         doc = json.loads(subprocess.check_output(['yq', '-o=json', '.', str(ROOT / '.github/workflows/publish.yaml')]))
         publishers = {name: job for name, job in doc['jobs'].items() if name.endswith('_publish')}
-        self.assertEqual(len(publishers), 5)
+        self.assertEqual(len(publishers), 6)
         for name, job in publishers.items():
             key = name.removesuffix('_publish')
             self.assertEqual(job['needs'], [key + '_decide', key + '_checks'])
@@ -26,6 +26,10 @@ class PublicationTests(unittest.TestCase):
         postgres = publishers['crunchy_postgres_vectorchord_publish']['with']
         self.assertEqual(postgres['platforms'], 'linux/amd64')
         self.assertIn('smoke-test.sh', postgres['smoke-command'])
+        crowdsec = publishers['crowdsec_agent_publish']['with']
+        self.assertEqual(crowdsec['platforms'], 'linux/amd64,linux/arm64')
+        self.assertFalse(crowdsec['native-arm'])
+        self.assertIn('crowdsec-agent/smoke-test.sh', crowdsec['smoke-command'])
 
     def test_native_checks_do_not_build_images(self):
         text = (ROOT / '.github/workflows/checks.yaml').read_text()

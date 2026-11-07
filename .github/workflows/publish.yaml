@@ -14,6 +14,7 @@ name: Publish images
         - go-mmproxy
         - protonmailbridge
         - crunchy-postgres-vectorchord
+        - crowdsec-agent
         default: all
       force:
         description: Rebuild unchanged inputs; never replace released versions
@@ -243,6 +244,51 @@ jobs:
       platforms: linux/amd64
       native-arm: false
       smoke-command: bash crunchy-postgres-vectorchord/smoke-test.sh local/publishing-smoke:latest
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  crowdsec_agent_decide:
+    name: Decide (crowdsec-agent)
+    if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'crowdsec-agent' }}
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+    with:
+      image: crowdsec-agent
+      mode: declarative
+      version-file: crowdsec-agent/config.yaml
+      input-paths: '["crowdsec-agent", ".github/workflows", ".github/scripts", "tests"]'
+      force: ${{ inputs.force || false }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  crowdsec_agent_checks:
+    name: Checks (crowdsec-agent)
+    needs: crowdsec_agent_decide
+    if: ${{ needs.crowdsec_agent_decide.outputs.build == 'true' }}
+    uses: ./.github/workflows/checks.yaml
+    permissions:
+      contents: read
+  crowdsec_agent_publish:
+    name: Image (crowdsec-agent)
+    needs:
+    - crowdsec_agent_decide
+    - crowdsec_agent_checks
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image: crowdsec-agent
+      mode: declarative
+      version: ${{ needs.crowdsec_agent_decide.outputs.version }}
+      fingerprint: ${{ needs.crowdsec_agent_decide.outputs.fingerprint }}
+      context: crowdsec-agent
+      platforms: linux/amd64,linux/arm64
+      native-arm: false
+      smoke-command: bash crowdsec-agent/smoke-test.sh local/publishing-smoke:latest
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
