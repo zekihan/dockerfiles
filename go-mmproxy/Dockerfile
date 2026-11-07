@@ -11,6 +11,7 @@ COPY config.yaml /build/config.yaml
 # WORKAROUND(OPS-214): kzemek/go-mmproxy#39, recheck after go-mmproxy > 2.3.1
 # Upstream picks the backend from the frontend family, so PROXY TCP6 over IPv4 fails.
 COPY patches/ipv6-family.patch /build/ipv6-family.patch
+COPY entrypoint/ /build/entrypoint/
 
 RUN set -eu \
     && grep -Fx "sourceRevision: ${SOURCE_REVISION}" /build/config.yaml \
@@ -25,14 +26,20 @@ RUN set -eu \
     && test "$(git ls-files --others --exclude-standard)" = "internal/tcp/tcp_family_test.go" \
     && go test ./internal/tcp -run TestChooseTargetAddrFamily -count=1 \
     && CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" go build -trimpath -ldflags='-s -w' -o /go-mmproxy . \
-    && chmod 0555 /go-mmproxy
+    && cd /build/entrypoint \
+    && gofmt -l . | (! grep .) \
+    && go vet ./... \
+    && go test -count=1 ./... \
+    && CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" go build -trimpath -ldflags='-s -w' -o /mmproxy-entrypoint . \
+    && chmod 0555 /go-mmproxy /mmproxy-entrypoint
 
 FROM scratch AS final
 
 COPY --from=builder /go-mmproxy /usr/local/bin/go-mmproxy
+COPY --from=builder /mmproxy-entrypoint /usr/local/bin/mmproxy-entrypoint
 COPY licenses/ /usr/share/licenses/dockerfiles/
 
-ENTRYPOINT ["/usr/local/bin/go-mmproxy"]
+ENTRYPOINT ["/usr/local/bin/mmproxy-entrypoint"]
 
 LABEL org.opencontainers.image.authors="zekihan@noqer.com" \
     org.opencontainers.image.url="https://noqer.com/" \
@@ -41,4 +48,4 @@ LABEL org.opencontainers.image.authors="zekihan@noqer.com" \
     org.opencontainers.image.vendor="Zekihan AZMAN" \
     org.opencontainers.image.licenses="BSD-3-Clause" \
     org.opencontainers.image.title="go-mmproxy" \
-    org.opencontainers.image.description="Static go-mmproxy with PROXY source-family backend selection for transparent IPv6 client forwarding."
+    org.opencontainers.image.description="Static go-mmproxy with PROXY source-family backend selection for transparent IPv6 client forwarding, with optional policy-routing setup."
