@@ -14,7 +14,7 @@ updates refresh `edge`. Increase the revision for a new stable packaging release
 Manual force rebuilds edge; it cannot overwrite immutable releases. Old tags stay.
 
 Proton Mail Bridge builds on native amd64 and arm64 runners. Other portable images
-cross-compile on amd64; Postgres/VectorChord remains amd64-only and smoke-tests the
+cross-compile on amd64; the CrowdSec agent smoke-tests the prepared artifact; Postgres/VectorChord remains amd64-only and smoke-tests the
 prepared artifact. The shared publisher copies one OCI archive to both registries
 and verifies matching digests and anonymous access. Make the packages public before
 accepting the first successful run.
@@ -50,6 +50,7 @@ inventory of every dependency in an upstream base image.
 - [DMARC converter notices](dmarc-report-converter/licenses/NOTICE.md)
 - [distroless notices](distroless/licenses/NOTICE.md)
 - [Crunchy PostgreSQL / VectorChord notices](crunchy-postgres-vectorchord/licenses/NOTICE.md)
+- [CrowdSec agent](crowdsec-agent/README.md) ([notices](crowdsec-agent/licenses/NOTICE.md))
 
 The Crunchy image uses software from the Crunchy Data Developer Program, whose
 terms restrict redistribution. Publishing remains enabled. The notice is not

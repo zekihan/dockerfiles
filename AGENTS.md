@@ -5,7 +5,7 @@ This file provides guidance to AI Agents when working with code in this reposito
 ## Overview
 
 A monorepo of independent container images: `distroless`, `dmarc-report-converter`,
-`go-mmproxy`, `protonmailbridge`, and `crunchy-postgres-vectorchord`. Each top-level
+`go-mmproxy`, `protonmailbridge`, `crunchy-postgres-vectorchord`, and `crowdsec-agent`. Each top-level
 image directory contains its Dockerfile and build configuration. The shared
 `.github/workflows/publish.yaml` workflow handles every image; adding an image
 requires wiring its per-image decide, checks, and publish jobs into that workflow
@@ -53,6 +53,7 @@ When changing build args that the Dockerfile reads from `config.yaml` (dmarc's `
 - **go-mmproxy** — applies the IPv6 family patch (OPS-214) and builds for the configured architectures.
 - **protonmailbridge** — builds on native amd64 and arm64 runners and runs as non-root UID 65532.
 - **crunchy-postgres-vectorchord** — amd64-only; smoke-tests the prepared artifact before publication.
+- **crowdsec-agent** — upstream CrowdSec plus a static Go supervisor (`crowdsec-agent/supervisor`) for health, hub refresh and init-container preparation. The final stage only adds files (no `RUN`), and `/usr/local/sbin/crowdsec` symlinks to the supervisor so the upstream entrypoint goes through it. `apply-whitelists.sh` is copied unchanged from homelab. `version` tracks the CrowdSec tag; keep it in step with the `FROM` pin. Run `go test ./...` in `supervisor/` and `smoke-test.sh` against a local build.
 
 ## Conventions
 
