@@ -54,6 +54,8 @@ COPY --from=certs /licenses/ /usr/share/licenses/dockerfiles/
 COPY --from=builder /licenses/ /usr/share/licenses/dockerfiles/
 COPY licenses/ /usr/share/licenses/dockerfiles/
 
+USER 25000:25000
+
 ENTRYPOINT ["/entrypoint.sh"]
 
 LABEL org.opencontainers.image.authors="zekihan@noqer.com" \
