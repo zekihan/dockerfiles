@@ -29,7 +29,7 @@ ENTRYPOINT ["/"]
 LABEL org.opencontainers.image.authors="zekihan@noqer.com" \
     org.opencontainers.image.url="https://noqer.com/" \
     org.opencontainers.image.documentation="https://docs.noqer.com/" \
-    org.opencontainers.image.source="https://github.com/zekihan/dockerfiles/distroless" \
+    org.opencontainers.image.source="https://github.com/zekihan/dockerfiles" \
     org.opencontainers.image.vendor="Zekihan AZMAN" \
     org.opencontainers.image.licenses="MPL-2.0 AND LicenseRef-IANA-TZ-Public-Domain" \
     org.opencontainers.image.title="distroless" \
