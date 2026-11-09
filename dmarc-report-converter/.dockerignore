@@ -1,0 +1,7 @@
+**
+!Dockerfile
+!config.yaml
+!entrypoint.sh
+!verify-source.sh
+!licenses/
+!licenses/**
