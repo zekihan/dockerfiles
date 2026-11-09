@@ -6,6 +6,8 @@ FROM --platform=$BUILDPLATFORM docker.io/golang:1.27.2-alpine@sha256:f92b6ef800e
 
 ARG TARGETPLATFORM
 
+WORKDIR /build
+
 RUN apk add --no-cache \
         ca-certificates && \
     apk add --no-cache --virtual=build-dependencies \
@@ -16,8 +18,8 @@ RUN apk add --no-cache \
 COPY config.yaml config.yaml
 COPY verify-source.sh /usr/local/bin/verify-source.sh
 
-RUN export VERSION=$(yq '.sourceVersion' config.yaml) && \
-    SOURCE_COMMIT=$(yq '.sourceCommit' config.yaml) && \
+RUN VERSION="$(yq '.sourceVersion' config.yaml)" && export VERSION && \
+    SOURCE_COMMIT="$(yq '.sourceCommit' config.yaml)" && \
     export GOOS="linux" && export CGO_ENABLED=0 && \
     case ${TARGETPLATFORM} in \
         "linux/amd64")    ARCH="amd64"          ;; \
@@ -46,13 +48,13 @@ FROM docker.io/busybox:1.38.0@sha256:a46257e06c82ad85242d0d38077d0a52d9896389ca6
 
 COPY --from=certs /etc/ssl/certs /etc/ssl/certs
 COPY --from=builder /usr/bin/dmarc-report-converter /usr/bin/dmarc-report-converter
-COPY ./entrypoint.sh ./entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 COPY --from=builder /tmp/repo/source-revision /usr/share/dmarc-report-converter/source-revision
 COPY --from=certs /licenses/ /usr/share/licenses/dockerfiles/
 COPY --from=builder /licenses/ /usr/share/licenses/dockerfiles/
 COPY licenses/ /usr/share/licenses/dockerfiles/
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
 
 LABEL org.opencontainers.image.authors="zekihan@noqer.com" \
     org.opencontainers.image.url="https://noqer.com/" \
