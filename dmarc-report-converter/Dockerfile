@@ -1,13 +1,12 @@
 FROM --platform=$BUILDPLATFORM docker.io/alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS certs
-RUN apk update && apk add ca-certificates
+RUN apk add --no-cache ca-certificates
 RUN mkdir -p /licenses && apk info -v ca-certificates > /licenses/alpine-packages.txt
 
 FROM --platform=$BUILDPLATFORM docker.io/golang:1.27.2-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS builder
 
 ARG TARGETPLATFORM
 
-RUN apk update && \
-    apk add --no-cache \
+RUN apk add --no-cache \
         ca-certificates && \
     apk add --no-cache --virtual=build-dependencies \
         git \
