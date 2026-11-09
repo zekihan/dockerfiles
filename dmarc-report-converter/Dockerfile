@@ -61,7 +61,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 LABEL org.opencontainers.image.authors="zekihan@noqer.com" \
     org.opencontainers.image.url="https://noqer.com/" \
     org.opencontainers.image.documentation="https://docs.noqer.com/" \
-    org.opencontainers.image.source="https://github.com/zekihan/dockerfiles/dmarc-report-converter" \
+    org.opencontainers.image.source="https://github.com/zekihan/dockerfiles" \
     org.opencontainers.image.vendor="Zekihan AZMAN" \
     org.opencontainers.image.licenses="AGPL-3.0-only AND MIT AND BSD-3-Clause AND Apache-2.0 AND GPL-2.0-only AND MPL-2.0" \
     org.opencontainers.image.title="Dmarc Report Converter" \
