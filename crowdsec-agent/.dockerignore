@@ -1,1 +1,7 @@
-README.md
+**
+!Dockerfile
+!apply-whitelists.sh
+!licenses/
+!licenses/**
+!supervisor/
+!supervisor/**
