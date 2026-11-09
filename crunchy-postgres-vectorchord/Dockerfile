@@ -1,6 +1,8 @@
 FROM registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi9-18.4-2621@sha256:73d62247952de9eb3086a23ceda8a79b243cef75f710e4f40aabacad577d12e8 AS base
 
 FROM base AS builder
+# Builder-only: microdnf and header installs need root; the final stage resets the user.
+# hadolint ignore=DL3002
 USER root
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -47,6 +49,8 @@ RUN mkdir -p /out/usr/share/licenses/dockerfiles/vectorchord \
 FROM base AS final
 COPY --from=builder /out/ /
 COPY licenses/ /usr/share/licenses/dockerfiles/
+# PGO sets fsGroup 26 but no runAsUser, so the image user must stay Crunchy's postgres UID.
+USER 26:26
 
 LABEL org.opencontainers.image.authors="zekihan@noqer.com" \
     org.opencontainers.image.url="https://noqer.com/" \
