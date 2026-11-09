@@ -18,4 +18,4 @@ set +e
 rm -r "${OUTPUT_DIR:?}"/*
 set -e
 
-dmarc-report-converter -config "${CONFIG_DIR}/${CONFIG_FILE}"
+exec dmarc-report-converter -config "${CONFIG_DIR}/${CONFIG_FILE}"
