@@ -1,5 +1,7 @@
 FROM --platform=$BUILDPLATFORM golang:1.25.14@sha256:699337d620559a59b4a2bb298ad59611e535d2ee755a34cf2d2a98f37578dc80 AS builder
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 ARG TARGETARCH
 ARG SOURCE_REVISION=e5c3c990eed960dacd34038c088d6ce4c4b35c97
 
