@@ -1,0 +1,9 @@
+**
+!Dockerfile
+!config.yaml
+!entrypoint/
+!entrypoint/**
+!licenses/
+!licenses/**
+!patches/
+!patches/**
