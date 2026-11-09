@@ -1,5 +1,5 @@
 module github.com/zekihan/dockerfiles/crowdsec-agent/supervisor
 
-go 1.22
+go 1.27.2
 
 require go.yaml.in/yaml/v3 v3.0.4
