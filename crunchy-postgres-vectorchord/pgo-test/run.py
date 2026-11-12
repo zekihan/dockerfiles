@@ -123,7 +123,7 @@ class Harness:
         run(['kind', 'create', 'cluster', '--name', self.name, '--kubeconfig', self.config,
              '--image', self.args.node_image, '--wait', '180s'], timeout=300)
         self.stage = 'operator installation'
-        self.k('apply', '-f', str(self.args.operator_manifest))
+        self.k('apply', '--server-side', '-f', str(self.args.operator_manifest))
         self.k('wait', '--for=condition=Established',
                'crd/postgresclusters.' + PREFIX[:-1], '--timeout=120s')
         self.apply({'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': 'pgo-test'}})

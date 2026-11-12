@@ -72,6 +72,27 @@ class HarnessTests(unittest.TestCase):
                 self.h.execute()
         self.assertFalse(self.h.created)
 
+    def test_large_operator_crd_does_not_require_last_applied_annotation(self):
+        self.args.operator_manifest.write_text(json.dumps({
+            'kind': 'CustomResourceDefinition', 'metadata': {'name': 'fixture'},
+            'spec': {'description': 'x' * 262144}}))
+        installed = []
+
+        def kubectl(*args, **kwargs):
+            if args[0] == 'apply':
+                size = len(self.args.operator_manifest.read_bytes())
+                if '--server-side' not in args and size > 262144:
+                    raise RuntimeError('last-applied annotation exceeds Kubernetes limit')
+                installed.append(self.args.operator_manifest)
+                return ''
+            raise RuntimeError('stop after operator installation')
+
+        with patch.object(pgo, 'run', return_value=''), \
+                patch.object(self.h, 'k', side_effect=kubectl):
+            with self.assertRaisesRegex(RuntimeError, 'stop after operator installation'):
+                self.h.execute()
+        self.assertEqual(installed, [self.args.operator_manifest])
+
     def test_cleanup_uses_private_config_even_when_ambient_config_is_invalid(self):
         # Model kind's config selection at the subprocess boundary. Invalid
         # ambient config must not turn an otherwise successful cleanup into a
