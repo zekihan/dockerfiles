@@ -133,25 +133,45 @@ class HarnessTests(unittest.TestCase):
 
     def test_recovery_sequence_and_non_destructive_verifier(self):
         calls = []
+        initial_conditions = iter([[], [{'type': 'PGBackRestReplicaCreate', 'status': 'False'}],
+                                   [{'type': 'PGBackRestReplicaCreate', 'status': 'True'}]])
+        timeline_ready = iter(['f', 't'])
         self.h.members = lambda cluster: ('source-old', 'source-new') if self.h.stage != 'replica promotion' else ('source-new', 'source-old')
-        self.h.wait = lambda predicate: predicate()
         self.h.apply = lambda obj: calls.append(('apply', obj))
         self.h.check = lambda pod: calls.append(('check', pod))
         def sql(pod, text):
             calls.append(('sql', text))
+            if 'pg_control_checkpoint()' in text:
+                return next(timeline_ready)
             return '1000' if 'count(*)' in text else ('t' if self.h.stage == 'source reconciliation' else 'f')
         self.h.sql = sql
         def kubectl(*args, **kwargs):
             calls.append(('k', args))
+            if args[:3] == ('get', 'postgrescluster', 'source'):
+                return json.dumps({'status': {'conditions': next(initial_conditions)}})
             if 'info' in args:
                 return json.dumps([{'backup': [{'type': 'full', 'timestamp': {'stop': 1},
                                                'label': '20261027-010101F'}]}])
             return ''
         self.h.k = kubectl
-        with patch.object(pgo, 'run', return_value=''):
+        with patch.object(pgo, 'run', return_value=''), patch.object(pgo.time, 'sleep'):
             self.h.execute()
         self.assertEqual(len(self.h.evidence['stages']), 4)
+        initial_backups = [i for i, c in enumerate(calls)
+                           if c[0] == 'k' and c[1][:3] == ('get', 'postgrescluster', 'source')]
+        self.assertEqual(len(initial_backups), 3)
+        seed = next(i for i, c in enumerate(calls) if c[0] == 'sql')
+        switchover = next(i for i, c in enumerate(calls) if c[0] == 'k' and 'switchover' in c[1])
+        self.assertLess(initial_backups[-1], seed)
+        self.assertLess(seed, switchover)
         backup = next(i for i, c in enumerate(calls) if c[0] == 'k' and 'backup' in c[1])
+        checkpoint = calls.index(('sql', 'CHECKPOINT;'))
+        timelines = [i for i, c in enumerate(calls)
+                     if c[0] == 'sql' and 'pg_control_checkpoint()' in c[1]]
+        self.assertEqual(len(timelines), 2)
+        self.assertLess(switchover, checkpoint)
+        self.assertLess(checkpoint, timelines[0])
+        self.assertLess(timelines[-1], backup)
         drop = calls.index(('sql', 'DROP TABLE embeddings;'))
         restore = next(i for i, c in enumerate(calls) if c[0] == 'apply' and c[1]['metadata']['name'] == 'recovered')
         self.assertLess(backup, drop)

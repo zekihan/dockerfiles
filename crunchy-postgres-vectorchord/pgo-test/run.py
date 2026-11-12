@@ -130,6 +130,11 @@ class Harness:
         self.stage = 'source reconciliation'
         self.apply(manifest('source', self.args.image, self.args.backrest_image))
         leader, follower = self.wait(lambda: self.members('source'))
+        def initial_backup_ready():
+            cluster = json.loads(self.k('get', 'postgrescluster', 'source', '-o', 'json'))
+            return any(c.get('type') == 'PGBackRestReplicaCreate' and c.get('status') == 'True'
+                       for c in cluster.get('status', {}).get('conditions', []))
+        self.wait(initial_backup_ready)
         self.sql(leader, (HERE.parent / 'smoke-test.sql').read_text())
         self.wait(lambda: self.sql(follower, 'SELECT count(*) FROM embeddings;') == '1000')
         if self.sql(follower, 'SELECT pg_is_in_recovery();') != 't':
@@ -145,6 +150,10 @@ class Harness:
         self.check(leader)
         if self.sql(leader, 'SELECT pg_is_in_recovery();') != 'f':
             raise RuntimeError('promoted database is not writable primary')
+        self.sql(leader, 'CHECKPOINT;')
+        self.wait(lambda: self.sql(leader,
+            "SELECT timeline_id = ('x' || left(pg_walfile_name(pg_current_wal_lsn()), 8))::bit(32)::bigint "
+            "FROM pg_control_checkpoint();") == 't')
         self.checkpoint(self.stage)
         self.stage = 'full pgBackRest backup'
         self.k('exec', leader, '-c', 'database', '--', 'pgbackrest', '--stanza=db',
