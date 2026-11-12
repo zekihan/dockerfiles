@@ -17,7 +17,7 @@ VectorChord 1.1.1 offers AGPLv3 or Elastic License v2. The repository license
 covers this repository's original build files and scripts only. See the
 [bundled notice](licenses/NOTICE.md) for component terms and source references.
 
-PGO-compatible Crunchy PostgreSQL 18.4 plus VectorChord 1.1.1, initially for
+PGO-compatible Crunchy PostgreSQL 18.6 plus VectorChord 1.1.1, initially for
 `linux/amd64`. The final stage inherits the Crunchy runtime unchanged and adds
 only VectorChord library, control, and SQL files. pgvector remains supplied by
 Crunchy. No default command, user, or database configuration is overridden.
@@ -41,7 +41,7 @@ validation; run it for the exact candidate before production promotion. See
 ## Build dependencies
 
 The Crunchy base image is pinned by digest. The builder extracts PostgreSQL
-18.4 PGDG RHEL 9 headers (verified by SHA-256); the base does not ship server
+18.6 PGDG RHEL 9 headers (verified by SHA-256); the base does not ship server
 headers. It retains Crunchy's `pg_config` and checks that the header version
 matches the runtime. These are matching upstream-version headers, not Crunchy
 vendor development packages. Runtime smoke testing is required for every build.
@@ -49,6 +49,8 @@ vendor development packages. Runtime smoke testing is required for every build.
 VectorChord is compiled from a checksummed release archive inside the same UBI
 base with a pinned Rust toolchain. No Debian-built extension binaries are copied
 into UBI. Build dependencies and headers are absent from the final stage.
+Crunchy's LLVM JIT packages are removed only in the builder so UBI's newer LLVM
+build tools can be installed. The final stage retains the base's JIT packages.
 
 ## PGO / Immich configuration
 
@@ -71,15 +73,15 @@ Renovate's Dockerfile manager tracks the Crunchy base. PostgreSQL minor updates
 must also update the matching PGDG header package and checksum. VectorChord and
 Rust versions/checksums are deliberately updated together by hand. Update the
 combined `config.yaml` version when PostgreSQL or VectorChord changes; bump
-`nonce` for other rebuilds. Keep PostgreSQL on major 18 in this image line.
+`revision` for other packaging releases. Keep PostgreSQL on major 18 in this image line.
 
-CI builds and tests pull requests without publishing. After smoke tests pass,
-main-branch pushes and manual main-branch runs publish the exact tested image to
-Docker Hub and GHCR. It uses existing `DOCKER_USERNAME`, `DOCKER_PASSWORD`, and
-`GITHUB_TOKEN` credentials. Tags include the combined version (for example,
-`18.4-vectorchord1.1.1`) and a revision/run/attempt tag
-(`<version>-r<nonce>-<run_number>-<run_attempt>`). No `latest` or major-only tag
-is published. Pin the published digest in GitOps.
+Pull requests run native checks without building containers. Scheduled and
+manual main-branch runs build, smoke-test, and publish the exact tested image to
+Docker Hub and GHCR using existing `DOCKER_USERNAME`, `DOCKER_PASSWORD`, and
+`GITHUB_TOKEN` credentials. A new declaration publishes an immutable release
+(for example, `18.6-vectorchord1.1.1-r1`) and advances `latest`; successful builds
+update `edge`. Manual force rebuilds update `edge` without replacing the release.
+Pin the published release tag and digest in GitOps.
 
 Extension upgrades may require `ALTER EXTENSION` and index rebuilding; changing
 the image alone does not perform those operations.

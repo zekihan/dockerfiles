@@ -1,4 +1,4 @@
-FROM registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi9-18.4-2621@sha256:73d62247952de9eb3086a23ceda8a79b243cef75f710e4f40aabacad577d12e8 AS base
+FROM registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi9-18.6-2633@sha256:eb80bdfcb4d995f6a591b16deaa56932802d5b9f984c4c8e558ff11da3187ec3 AS base
 
 FROM base AS builder
 # Builder-only: microdnf and header installs need root; the final stage resets the user.
@@ -7,14 +7,16 @@ USER root
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Keep PGDG headers confined to the builder; preserve Crunchy's pg_config and runtime.
-ARG PG_DEVEL_VERSION=18.4-2PGDG.rhel9.8
-ARG PG_DEVEL_SHA256=ddeea4c990649e3c68ac0a43d091231f4797409aa638382e5c944117745d29ed
+ARG PG_DEVEL_VERSION=18.6-1PGDG.rhel9.8
+ARG PG_DEVEL_SHA256=8bbe900a0e69c25768ce3ae5a334f11c969e498e62c0b9c36a6d5b0d41646a87
 ARG VECTORCHORD_VERSION=1.1.1
 ARG VECTORCHORD_SHA256=d70b5595bfc852f1f24c05c0a40272e7deecbb0ddf8ffdddec5afa42c2392b1e
 ARG RUST_VERSION=1.93.0
 ARG RUST_SHA256=b9d9f01a96a2542852ccfddd82194276ba1c86bc76353309ff636b737fc0a772
 
-RUN microdnf install -y --disablerepo='epel*' clang clang-devel llvm-devel cpio tar xz git openssl-devel \
+# Crunchy's JIT packages pin an older LLVM than UBI's build tools; the final stage keeps them.
+RUN microdnf remove -y --disablerepo='epel*' '*-llvmjit' \
+    && microdnf install -y --disablerepo='epel*' clang clang-devel llvm-devel cpio tar xz git openssl-devel \
     && microdnf clean all
 
 WORKDIR /build
