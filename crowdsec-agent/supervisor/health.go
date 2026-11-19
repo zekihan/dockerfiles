@@ -214,7 +214,7 @@ type Monitor struct {
 	threshold float64
 	interval  float64
 	metrics   string
-	progress  map[string]*Progress
+	progress  []*Progress
 	wallNow   func() float64
 	monoNow   func() time.Duration
 	client    *http.Client
@@ -238,15 +238,15 @@ func NewMonitor(sources []Source, threshold, interval int) *Monitor {
 		threshold: float64(threshold),
 		interval:  float64(interval),
 		metrics:   metricsURL,
-		progress:  map[string]*Progress{},
+		progress:  make([]*Progress, len(sources)),
 		wallNow:   wallSeconds,
 		monoNow:   monotonic,
 		client:    &http.Client{},
 		logf:      func(line string) { fmt.Fprintln(os.Stdout, line) },
 		live:      true,
 	}
-	for _, s := range sources {
-		m.progress[s.Type] = NewProgress(m.wallNow())
+	for i := range sources {
+		m.progress[i] = NewProgress(m.wallNow())
 	}
 	m.checked = m.monoNow()
 	return m
@@ -307,8 +307,8 @@ func (m *Monitor) Poll() {
 		return
 	}
 	healthy := true
-	for _, s := range m.sources {
-		state := m.progress[s.Type]
+	for i, s := range m.sources {
+		state := m.progress[i]
 		counter := values[s.Type]
 		state.observe(counter, m.wallNow())
 		// Ignore logs from before the last observed counter advance and allow ingestion lag.

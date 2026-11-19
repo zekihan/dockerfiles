@@ -297,6 +297,30 @@ func TestMonitorScenarios(t *testing.T) {
 	}
 }
 
+func TestMonitorTracksBackendFailuresPerSource(t *testing.T) {
+	f := &fakeEnv{metricsOK: true, backend: http.StatusServiceUnavailable}
+	m, c, _ := newTestMonitor(t, f, 2)
+	healthyBackend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(healthyBackend.Close)
+	m.sources[1].URL = healthyBackend.URL
+
+	m.Poll()
+	if code, _ := probe(t, m, "/ready"); code != http.StatusOK {
+		t.Fatalf("initial /ready = %d, want 200 during grace period", code)
+	}
+
+	c.wall += 120
+	c.mono += 120
+	m.Poll()
+	for _, target := range []string{"/live", "/ready"} {
+		if code, _ := probe(t, m, target); code != http.StatusServiceUnavailable {
+			t.Errorf("%s = %d, want 503 after one source's backend fails for 120 seconds", target, code)
+		}
+	}
+}
+
 func TestFreshnessWindowScalesWithSources(t *testing.T) {
 	cases := []struct {
 		sources  int
