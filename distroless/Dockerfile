@@ -6,7 +6,8 @@ RUN mkdir -p \
     /tmp/distroless/tmp \
     /tmp/distroless/usr/share/ca-certificates \
     /tmp/distroless/etc/ssl/certs \
-    /tmp/distroless/usr/share/zoneinfo
+    /tmp/distroless/usr/share/zoneinfo \
+    && chmod 1777 /tmp/distroless/tmp
 
 RUN apk --no-cache --update --repository https://dl-cdn.alpinelinux.org/alpine/edge/main add \
     ca-certificates \
