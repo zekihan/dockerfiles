@@ -4,7 +4,9 @@ RUN mkdir -p /licenses && apk info -v ca-certificates > /licenses/alpine-package
 
 FROM --platform=$BUILDPLATFORM docker.io/golang:1.27.2-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS builder
 
-ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT
 
 WORKDIR /build
 
@@ -20,18 +22,10 @@ COPY verify-source.sh /usr/local/bin/verify-source.sh
 
 RUN VERSION="$(yq '.sourceVersion' config.yaml)" && export VERSION && \
     SOURCE_COMMIT="$(yq '.sourceCommit' config.yaml)" && \
-    export GOOS="linux" && export CGO_ENABLED=0 && \
-    case ${TARGETPLATFORM} in \
-        "linux/amd64")    ARCH="amd64"          ;; \
-        "linux/arm64")    ARCH="arm64"          ;; \
-        "linux/riscv64")  ARCH="riscv64"        ;; \
-        "linux/ppc64le")  ARCH="ppc64le"        ;; \
-        "linux/s390x")    ARCH="s390x"          ;; \
-        "linux/386")      ARCH="386"            ;; \
-        "linux/arm/v7")   ARCH="arm"; ARM="7"   ;; \
-        "linux/arm/v6")   ARCH="arm"; ARM="6"   ;; \
-    esac && \
-    export GOARCH="${ARCH}" && export GOARM="${ARM}" && \
+    export GOOS="${TARGETOS:?}" GOARCH="${TARGETARCH:?}" CGO_ENABLED=0 && \
+    if [ "${TARGETARCH}" = arm ] && [ -n "${TARGETVARIANT}" ]; then \
+        export GOARM="${TARGETVARIANT#v}"; \
+    fi && \
     sh /usr/local/bin/verify-source.sh https://github.com/tierpod/dmarc-report-converter.git "$VERSION" "$SOURCE_COMMIT" /tmp/repo && \
     cd /tmp/repo && \
     go build -mod=vendor -ldflags="-s -w -X \"main.version=${VERSION}\"" -o "/usr/bin/dmarc-report-converter" ./cmd/dmarc-report-converter
