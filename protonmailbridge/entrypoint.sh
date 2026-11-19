@@ -36,6 +36,7 @@ case "${1:-}" in
     fi
     check_keyring
     mkdir -p /root/tls-export /bridge-certs
+    rm -f /root/tls-export/cert.pem
     echo 'In Bridge, run: login, info, cert export (path /root/tls-export), then exit.'
     /protonmail/proton-bridge --cli
     if [[ ! -s /root/tls-export/cert.pem ]]; then

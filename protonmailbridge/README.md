@@ -58,8 +58,9 @@ and restrict inbound access with a NetworkPolicy.
 
 Changing the bind address does not change the certificate identity. For a
 Kubernetes Service, use `cert import` in the setup CLI to import a certificate
-and private key whose SAN includes the Service DNS name. Trust the issuing CA
-in Mailvault and keep hostname verification enabled. Restart Bridge after import.
+and private key. The certificate's SAN must include the Service DNS name. Then
+run `cert export` to `/root/tls-export`, exit the CLI, and restart Bridge. Trust
+the issuing CA in Mailvault and keep hostname verification enabled.
 The image build applies the patch strictly and runs listener regression tests
 before compiling. Upstream revisions that no longer accept the patch fail the build.
 
