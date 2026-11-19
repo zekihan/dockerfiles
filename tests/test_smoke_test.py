@@ -27,6 +27,10 @@ if name == 'docker':
     if args[0] == 'create':
         version = next(a.split('=', 1)[1] for a in args if a.startswith('EXPECTED_VERSION='))
         (root / 'version').write_text(version)
+        user = os.environ['IMAGE_USER']
+        if '--user' in args:
+            user = args[args.index('--user') + 1]
+        (root / 'user').write_text(user)
         print('fixture-container')
     elif args[0] == 'cp':
         shutil.copyfile(args[1], root / args[2].split(':/')[1])
@@ -35,6 +39,9 @@ if name == 'docker':
         sys.exit(subprocess.run(['bash', '-s'], input=sys.stdin.read(), text=True, env=env).returncode)
     elif args[0] == 'inspect':
         print('0')
+elif name == 'id':
+    uid, gid = (root / 'user').read_text().split(':')
+    print(uid if args == ['-u'] else gid)
 elif name in ('pg_ctl', 'pg_restore'):
     phase = 'restore' if name == 'pg_restore' else ('restart' if 'restart' in args else '')
     if phase == os.environ['FAULT']:
@@ -62,18 +69,18 @@ elif name == 'psql':
 
 
 class SmokeTestTests(unittest.TestCase):
-    def run_smoke(self, fault):
+    def run_smoke(self, fault, image_user='26:26'):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             for name in ('docker', 'initdb', 'pg_ctl', 'psql', 'pg_config',
-                         'pg_dump', 'createdb', 'pg_restore', 'cat'):
+                         'pg_dump', 'createdb', 'pg_restore', 'cat', 'id'):
                 command = root / name
                 command.write_text(COMMAND)
                 command.chmod(0o755)
             result = subprocess.run(
                 ['bash', str(IMAGE / 'smoke-test.sh'), 'fixture/candidate'],
                 env={**os.environ, 'PATH': temp + os.pathsep + os.environ['PATH'],
-                     'MOCK_ROOT': temp, 'FAULT': fault},
+                     'MOCK_ROOT': temp, 'FAULT': fault, 'IMAGE_USER': image_user},
                 capture_output=True, text=True, timeout=15)
             return result, (root / 'commands').read_text()
 
@@ -81,6 +88,16 @@ class SmokeTestTests(unittest.TestCase):
         result, commands = self.run_smoke('none')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('["docker", "rm", "-f", "fixture-container"]', commands)
+
+    def test_rejects_wrong_image_uid_or_gid(self):
+        for image_user in ('0:0', '26:0'):
+            with self.subTest(image_user=image_user):
+                result, commands = self.run_smoke('none', image_user=image_user)
+                self.assertNotEqual(result.returncode, 0, f'image user {image_user} passed smoke test')
+                self.assertIn(f'Expected PostgreSQL runtime UID:GID 26:26, found {image_user}',
+                              result.stderr)
+                self.assertNotIn('"initdb"', commands)
+                self.assertIn('["docker", "rm", "-f", "fixture-container"]', commands)
 
     def test_restart_corruption_fails_without_reseeding(self):
         result, commands = self.run_smoke('restart')
