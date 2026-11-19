@@ -1,13 +1,22 @@
 name: Native checks
 'on':
   pull_request: null
-  workflow_call: null
+  workflow_call:
+    inputs:
+      image:
+        type: string
+        required: true
+    outputs:
+      platforms:
+        value: ${{ jobs.check.outputs.platforms }}
 permissions:
   contents: read
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      platforms: ${{ steps.platforms.outputs.platforms }}
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
@@ -17,6 +26,12 @@ jobs:
     - run: |
         bash .github/scripts/install_build_deps.sh
         python3 -m pip install -r .github/scripts/requirements-policy.txt
+    - name: Validate build platforms
+      id: platforms
+      env:
+        PUBLISH_IMAGE: ${{ inputs.image }}
+      run: python3 .github/scripts/check_build_platforms.py
+    - run: |
         python3 .github/scripts/check_action_pins.py
         python3 -m unittest discover -s tests -v
     - run: |

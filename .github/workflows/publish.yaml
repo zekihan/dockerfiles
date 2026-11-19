@@ -50,6 +50,8 @@ jobs:
     uses: ./.github/workflows/checks.yaml
     permissions:
       contents: read
+    with:
+      image: distroless
   distroless_publish:
     name: Image (distroless)
     needs:
@@ -65,7 +67,7 @@ jobs:
       version: ${{ needs.distroless_decide.outputs.version }}
       fingerprint: ${{ needs.distroless_decide.outputs.fingerprint }}
       context: distroless
-      platforms: linux/amd64,linux/arm64
+      platforms: ${{ needs.distroless_checks.outputs.platforms }}
       native-arm: false
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -94,6 +96,8 @@ jobs:
     uses: ./.github/workflows/checks.yaml
     permissions:
       contents: read
+    with:
+      image: dmarc-report-converter
   dmarc_report_converter_publish:
     name: Image (dmarc-report-converter)
     needs:
@@ -109,7 +113,7 @@ jobs:
       version: ${{ needs.dmarc_report_converter_decide.outputs.version }}
       fingerprint: ${{ needs.dmarc_report_converter_decide.outputs.fingerprint }}
       context: dmarc-report-converter
-      platforms: linux/amd64,linux/arm64
+      platforms: ${{ needs.dmarc_report_converter_checks.outputs.platforms }}
       native-arm: false
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -138,6 +142,8 @@ jobs:
     uses: ./.github/workflows/checks.yaml
     permissions:
       contents: read
+    with:
+      image: go-mmproxy
   go_mmproxy_publish:
     name: Image (go-mmproxy)
     needs:
@@ -153,7 +159,7 @@ jobs:
       version: ${{ needs.go_mmproxy_decide.outputs.version }}
       fingerprint: ${{ needs.go_mmproxy_decide.outputs.fingerprint }}
       context: go-mmproxy
-      platforms: linux/amd64,linux/arm64
+      platforms: ${{ needs.go_mmproxy_checks.outputs.platforms }}
       native-arm: false
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -182,6 +188,8 @@ jobs:
     uses: ./.github/workflows/checks.yaml
     permissions:
       contents: read
+    with:
+      image: protonmailbridge
   protonmailbridge_publish:
     name: Image (protonmailbridge)
     needs:
@@ -197,7 +205,7 @@ jobs:
       version: ${{ needs.protonmailbridge_decide.outputs.version }}
       fingerprint: ${{ needs.protonmailbridge_decide.outputs.fingerprint }}
       context: protonmailbridge
-      platforms: linux/amd64,linux/arm64
+      platforms: ${{ needs.protonmailbridge_checks.outputs.platforms }}
       native-arm: true
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -226,6 +234,8 @@ jobs:
     uses: ./.github/workflows/checks.yaml
     permissions:
       contents: read
+    with:
+      image: crunchy-postgres-vectorchord
   crunchy_postgres_vectorchord_publish:
     name: Image (crunchy-postgres-vectorchord)
     needs:
@@ -241,7 +251,7 @@ jobs:
       version: ${{ needs.crunchy_postgres_vectorchord_decide.outputs.version }}
       fingerprint: ${{ needs.crunchy_postgres_vectorchord_decide.outputs.fingerprint }}
       context: crunchy-postgres-vectorchord
-      platforms: linux/amd64
+      platforms: ${{ needs.crunchy_postgres_vectorchord_checks.outputs.platforms }}
       native-arm: false
       smoke-command: bash crunchy-postgres-vectorchord/smoke-test.sh local/publishing-smoke:latest
     secrets:
@@ -271,6 +281,8 @@ jobs:
     uses: ./.github/workflows/checks.yaml
     permissions:
       contents: read
+    with:
+      image: crowdsec-agent
   crowdsec_agent_publish:
     name: Image (crowdsec-agent)
     needs:
@@ -286,7 +298,7 @@ jobs:
       version: ${{ needs.crowdsec_agent_decide.outputs.version }}
       fingerprint: ${{ needs.crowdsec_agent_decide.outputs.fingerprint }}
       context: crowdsec-agent
-      platforms: linux/amd64,linux/arm64
+      platforms: ${{ needs.crowdsec_agent_checks.outputs.platforms }}
       native-arm: false
       smoke-command: bash crowdsec-agent/smoke-test.sh local/publishing-smoke:latest
     secrets:
