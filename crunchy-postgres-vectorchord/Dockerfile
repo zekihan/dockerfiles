@@ -20,8 +20,10 @@ RUN microdnf remove -y --disablerepo='epel*' '*-llvmjit' \
     && microdnf clean all
 
 WORKDIR /build
+# Use the RPM's RHEL minor directory because the generic rhel-9 path tracks the latest minor.
 RUN test "$(uname -m)" = x86_64 \
-    && curl -fsSL --retry 3 -o pg-devel.rpm "https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-9-x86_64/postgresql18-devel-${PG_DEVEL_VERSION}.x86_64.rpm" \
+    && pg_devel_rhel_version=${PG_DEVEL_VERSION##*.rhel} \
+    && curl -fsSL --retry 3 -o pg-devel.rpm "https://download.postgresql.org/pub/repos/yum/18/redhat/rhel-${pg_devel_rhel_version}-x86_64/postgresql18-devel-${PG_DEVEL_VERSION}.x86_64.rpm" \
     && echo "${PG_DEVEL_SHA256}  pg-devel.rpm" | sha256sum -c - \
     && mkdir headers && cd headers \
     && rpm2cpio ../pg-devel.rpm | cpio -idm \
