@@ -52,7 +52,8 @@ kernel over netlink, so the image still has no shell or iproute2. The setup is
 idempotent: routes are replaced and rules carry a fixed priority and are
 created exclusively, so a container restart inside the same pod network
 namespace neither duplicates nor fails on existing entries. The container needs
-`NET_ADMIN`; setup failure exits non-zero before go-mmproxy starts.
+`NET_ADMIN`. If Linux has disabled IPv6 on loopback, the helper installs only
+the IPv4 route and rule. Setup failure exits non-zero before go-mmproxy starts.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |

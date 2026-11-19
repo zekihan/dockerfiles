@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
+	"strings"
 	"syscall"
 )
 
@@ -178,6 +180,14 @@ func applyRouting(table, priority uint32) error {
 			}
 			return iifRuleMessage(s.family, s.src, s.srcLen, "lo", table, priority, seq)
 		})
+		if errors.Is(err, syscall.EACCES) && s.route && s.family == syscall.AF_INET6 {
+			// Linux rejects IPv6 routes via lo with EACCES when IPv6 is disabled
+			// on that device. Confirm the setting before treating the error as expected.
+			value, readErr := os.ReadFile("/proc/sys/net/ipv6/conf/lo/disable_ipv6")
+			if readErr == nil && strings.TrimSpace(string(value)) == "1" {
+				return nil
+			}
+		}
 		if err != nil && !errors.Is(err, syscall.EEXIST) {
 			return fmt.Errorf("%s table %d: %w", s.name, table, err)
 		}
