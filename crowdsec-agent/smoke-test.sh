@@ -35,8 +35,12 @@ docker run --rm -v "$work:/work:ro" --entrypoint sh "$image" -c '
   test -s /work/state/config.yaml
 '
 printf 'url: http://victorialogs:9428/\nquery: "*"\n' > "$work/connection/connection.yaml"
-if run_prepare 2>/dev/null; then
-  echo "prepare-agent accepted a connection with unexpected keys" >&2
+prepare_status=0
+prepare_output=$(run_prepare 2>&1) || prepare_status=$?
+expected_rejection='crowdsec-supervisor prepare-agent: /connection/connection.yaml: unexpected key "query"'
+if [[ "$prepare_status" != 1 || "$prepare_output" != *"$expected_rejection"* ]]; then
+  printf 'Expected prepare-agent to reject the connection query key (exit %s)\n%s\n' \
+    "$prepare_status" "$prepare_output" >&2
   exit 1
 fi
 echo "crowdsec-agent smoke test passed"
