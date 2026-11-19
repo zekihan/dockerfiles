@@ -4,7 +4,7 @@ set -euo pipefail
 image=${1:?Usage: smoke-test.sh IMAGE}
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 expected_version=$(awk '$1 == "version:" { print $2 }' "$script_dir/config.yaml")
-container=$(docker create -i --platform linux/amd64 --user 26:26 \
+container=$(docker create -i --platform linux/amd64 \
     --env EXPECTED_VERSION="$expected_version" --tmpfs /tmp:rw,mode=1777 --entrypoint /bin/bash "$image" -s)
 cleanup() {
     docker rm -f "$container" >/dev/null
@@ -15,6 +15,11 @@ docker cp "$script_dir/smoke-test.sql" "$container:/smoke-test.sql"
 docker cp "$script_dir/pgo-test/verify.sql" "$container:/verify.sql"
 docker start -ai "$container" <<'CONTAINER'
 set -euo pipefail
+runtime_user="$(id -u):$(id -g)"
+if [[ "$runtime_user" != 26:26 ]]; then
+    printf 'Expected PostgreSQL runtime UID:GID 26:26, found %s\n' "$runtime_user" >&2
+    exit 1
+fi
 export PGDATA=/tmp/pgdata PGHOST=/tmp
 initdb --auth-local=trust --auth-host=reject --no-locale >/dev/null
 pg_ctl -w -l /tmp/postgres.log -o "-c listen_addresses='' -c unix_socket_directories=/tmp -c shared_preload_libraries=pg_stat_statements,vchord.so" start || { cat /tmp/postgres.log; exit 1; }
