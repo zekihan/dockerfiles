@@ -10,11 +10,12 @@ RUN revision=$(sed -n "s/^sourceRevision: //p" /build-config.yaml) \
     && git fetch --depth 1 origin "$revision" \
     && git checkout --detach FETCH_HEAD
 COPY patches/ /patches/
-RUN git apply --check /patches/listen-address.patch \
-    && git apply /patches/listen-address.patch \
+RUN git apply --check /patches/*.patch \
+    && git apply /patches/*.patch \
     && gofmt -w internal/services/imapsmtpserver/listener*.go \
     && go test ./internal/services/imapsmtpserver -run 'Test(Configured|Invalid)ListenerAddress' -count=1
-RUN make build-nogui
+# Build only Bridge. The upstream launcher can run binaries cached on the state volume.
+RUN make proton-bridge
 
 FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl pass gnupg libsecret-1-0 libfido2-1 libcbor0.8 util-linux \
@@ -26,7 +27,7 @@ RUN groupadd --gid 65532 bridge \
     && chown 65532:65532 /root \
     && chmod 0700 /root \
     && install -d -o 65532 -g 65532 -m 0755 /bridge-certs
-COPY --from=build /src/bridge /src/proton-bridge /protonmail/
+COPY --from=build /src/bridge /protonmail/bridge
 COPY entrypoint.sh /setup/bridge.sh
 COPY licenses/ /usr/share/licenses/dockerfiles/
 COPY patches/ /usr/share/licenses/dockerfiles/patches/

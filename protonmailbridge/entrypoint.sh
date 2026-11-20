@@ -38,7 +38,7 @@ case "${1:-}" in
     mkdir -p /root/tls-export /bridge-certs
     rm -f /root/tls-export/cert.pem
     echo 'In Bridge, run: login, info, cert export (path /root/tls-export), then exit.'
-    /protonmail/proton-bridge --cli
+    /protonmail/bridge --cli
     if [[ ! -s /root/tls-export/cert.pem ]]; then
       echo 'Certificate not exported. Run initialization again and use cert export.' >&2
       exit 1
@@ -55,7 +55,7 @@ case "${1:-}" in
       exit 1
     fi
     check_keyring
-    exec /protonmail/proton-bridge --noninteractive
+    exec /protonmail/bridge --noninteractive
     ;;
   *) echo 'Expected init or serve' >&2; exit 2 ;;
 esac
