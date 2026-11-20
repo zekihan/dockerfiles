@@ -9,7 +9,7 @@ Initialize interactively (use the same image tag for all commands):
 ```sh
 docker run --rm -it --name proton-bridge-init \
   -v proton-bridge-state:/root -v proton-bridge-certs:/bridge-certs \
-  ghcr.io/zekihan/protonmailbridge:3.27.1-r2 init
+  ghcr.io/zekihan/protonmailbridge:3.27.2-r1 init
 ```
 
 Run `login`, `info`, then `cert export`; export to `/root/tls-export`, then `exit`.
@@ -19,7 +19,7 @@ Only the public certificate is copied into `/bridge-certs/cert.pem`.
 ```sh
 docker run -d --name proton-bridge --restart unless-stopped \
   -v proton-bridge-state:/root -v proton-bridge-certs:/bridge-certs \
-  ghcr.io/zekihan/protonmailbridge:3.27.1-r2
+  ghcr.io/zekihan/protonmailbridge:3.27.2-r1
 ```
 
 Bridge listens on loopback. Run the client with `--network container:proton-bridge`
@@ -43,9 +43,10 @@ For re-login or certificate rotation, stop Bridge, repeat init, and restart it.
 Do not delete the volumes when replacing the container.
 
 To build locally: `docker build -t local/protonmailbridge protonmailbridge`.
-Update config.yaml version and sourceRevision together for upstream upgrades.
-Base images are digest pinned. The workflow follows the repository's version,
-latest, and run-number tag conventions. See [licenses](licenses/NOTICE.md).
+Bridge updates are managed through the image. The image disables the upstream
+updater and launches its bundled binary directly, ignoring updates cached on
+existing state volumes. Update `version` and `sourceRevision` together in
+`config.yaml` for upstream upgrades. See [licenses](licenses/NOTICE.md).
 
 ## Direct network access
 
@@ -64,5 +65,5 @@ the issuing CA in Mailvault and keep hostname verification enabled.
 The image build applies the patch strictly and runs listener regression tests
 before compiling. Upstream revisions that no longer accept the patch fail the build.
 
-Packaging revisions now live in `config.yaml` as `revision`. The first unified
-release is `3.27.1-r3`; the existing `3.27.1-r2` artifact remains available.
+Packaging revisions live in `config.yaml` as `revision` and produce immutable
+`<version>-r<revision>` tags.

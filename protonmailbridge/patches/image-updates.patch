@@ -1,0 +1,89 @@
+diff --git a/internal/app/bridge.go b/internal/app/bridge.go
+index 6cce7b0..f774931 100644
+--- a/internal/app/bridge.go
++++ b/internal/app/bridge.go
+@@ -18,14 +18,14 @@
+ package app
+ 
+ import (
++	"context"
++	"errors"
+ 	"fmt"
+ 	"net/http"
+-	"runtime"
+ 
+ 	"github.com/Masterminds/semver/v3"
+ 	"github.com/ProtonMail/gluon/imap"
+ 	"github.com/ProtonMail/go-autostart"
+-	"github.com/ProtonMail/gopenpgp/v2/crypto"
+ 	"github.com/ProtonMail/proton-bridge/v3/internal/bridge"
+ 	"github.com/ProtonMail/proton-bridge/v3/internal/constants"
+ 	"github.com/ProtonMail/proton-bridge/v3/internal/crash"
+@@ -37,7 +37,6 @@ import (
+ 	"github.com/ProtonMail/proton-bridge/v3/internal/updater"
+ 	"github.com/ProtonMail/proton-bridge/v3/internal/useragent"
+ 	"github.com/ProtonMail/proton-bridge/v3/internal/vault"
+-	"github.com/ProtonMail/proton-bridge/v3/internal/versioner"
+ 	"github.com/ProtonMail/proton-bridge/v3/pkg/keychain"
+ 	"github.com/sirupsen/logrus"
+ 	"github.com/urfave/cli/v2"
+@@ -87,19 +86,13 @@ func withBridge(
+ 	// Create the autostarter.
+ 	autostarter := newAutostarter(exe)
+ 
+-	// Create the update installer.
+-	updater, err := newUpdater(locations)
+-	if err != nil {
+-		return fmt.Errorf("could not create updater: %w", err)
+-	}
+-
+ 	// Create a new bridge.
+ 	bridge, eventCh, err := bridge.New(
+ 		// The app stuff.
+ 		locations,
+ 		vault,
+ 		autostarter,
+-		updater,
++		imageUpdater{},
+ 		version,
+ 		keychains,
+ 		obsService,
+@@ -143,28 +136,17 @@ func newAutostarter(exe string) *autostart.App {
+ 	}
+ }
+ 
+-func newUpdater(locations *locations.Locations) (*updater.Updater, error) {
+-	updatesDir, err := locations.ProvideUpdatesPath()
+-	if err != nil {
+-		return nil, fmt.Errorf("could not provide updates path: %w", err)
+-	}
++// imageUpdater leaves package updates to the container image.
++type imageUpdater struct{}
+ 
+-	logrus.WithField("updates", updatesDir).Debug("Creating updater")
++func (imageUpdater) GetVersionInfo(context.Context, updater.Downloader) (updater.VersionInfo, error) {
++	return updater.VersionInfo{}, nil
++}
+ 
+-	key, err := crypto.NewKeyFromArmored(updater.DefaultPublicKey)
+-	if err != nil {
+-		return nil, fmt.Errorf("could not create key from armored: %w", err)
+-	}
++func (imageUpdater) InstallUpdate(context.Context, updater.Downloader, updater.Release, bool) error {
++	return errors.New("Bridge updates are managed by the container image")
++}
+ 
+-	verifier, err := crypto.NewKeyRing(key)
+-	if err != nil {
+-		return nil, fmt.Errorf("could not create key ring: %w", err)
+-	}
+-
+-	return updater.NewUpdater(
+-		versioner.New(updatesDir),
+-		verifier,
+-		constants.UpdateName,
+-		runtime.GOOS,
+-	), nil
++func (imageUpdater) RemoveOldUpdates() error {
++	return nil
+ }
