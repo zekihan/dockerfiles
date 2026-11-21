@@ -18,7 +18,8 @@ Every image directory contains:
 - `config.yaml` — build parameters:
   - `version` — the image version; also drives the published tags.
   - `arch` — comma-separated buildx platforms (e.g. `linux/amd64,linux/arm64`).
-  - `revision` — positive packaging revision, only for images that wrap an upstream release; a new `version-rN` identity requests an immutable release. Images with no upstream (`distroless`) omit it and bump their own `X.Y.Z` `version` instead. Use manual force for an edge-only rebuild.
+  - `versioning` — `upstream` for images that wrap an upstream release, `own` for images with no upstream (`distroless`). Required; the publisher refuses a missing or inconsistent profile.
+  - `revision` — positive packaging revision, required with `versioning: upstream` and forbidden with `versioning: own`; a new `version-rN` identity requests an immutable release. Own images bump their `X.Y.Z` `version` instead. Use manual force for an edge-only rebuild.
   - `sourceVersion` (dmarc only) — git tag of upstream source to build from.
   - `sourceCommit` (dmarc only) — reviewed full commit that the source tag must resolve to; update alongside `sourceVersion`.
   - `# renovate: depName=...` trailing comments on `version`/`sourceVersion` tell Renovate which upstream to track. Without this comment the version is manual (for example, `distroless` uses a hand-set version).
