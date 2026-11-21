@@ -1,3 +1,2 @@
-version: 1.0.0
+version: 1.0.1
 arch: linux/amd64,linux/arm64
-revision: 1
