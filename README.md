@@ -7,10 +7,14 @@ all images. Native checks gate every build; ordinary PR checks never build image
 New inputs publish `edge` to GHCR and Docker Hub. Unchanged successful inputs skip;
 failed revisions require a new commit or manual recovery. Non-main dispatches fail.
 
-Each image declares `version` plus a positive `revision` in `config.yaml`. A new
-`<version>-r<revision>` identity is released automatically after a successful build,
-and advances `latest`. An existing identity remains immutable even when dependency
-updates refresh `edge`. Increase the revision for a new stable packaging release.
+Each `config.yaml` states its `versioning` profile. An image that wraps an upstream
+release uses `versioning: upstream` with the upstream `version` and a positive
+`revision`; a new `<version>-r<revision>` identity is released automatically after a
+successful build, and advances `latest`. Increase the revision for a new stable
+packaging release. An image with no upstream (`distroless`) uses `versioning: own`,
+omits `revision` and declares its own `X.Y.Z`; bump that version for a new release.
+A missing profile, or one that does not match the config, fails the publish decision.
+An existing identity remains immutable even when dependency updates refresh `edge`.
 Manual force rebuilds edge; it cannot overwrite immutable releases. Old tags stay.
 
 Proton Mail Bridge builds on native amd64 and arm64 runners. Other portable images

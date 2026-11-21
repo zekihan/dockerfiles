@@ -29,7 +29,7 @@ jobs:
   distroless_decide:
     name: Decide (distroless)
     if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'distroless' }}
-    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       actions: read
@@ -57,7 +57,7 @@ jobs:
     needs:
     - distroless_decide
     - distroless_checks
-    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       packages: write
@@ -75,7 +75,7 @@ jobs:
   dmarc_report_converter_decide:
     name: Decide (dmarc-report-converter)
     if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'dmarc-report-converter' }}
-    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       actions: read
@@ -103,7 +103,7 @@ jobs:
     needs:
     - dmarc_report_converter_decide
     - dmarc_report_converter_checks
-    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       packages: write
@@ -121,7 +121,7 @@ jobs:
   go_mmproxy_decide:
     name: Decide (go-mmproxy)
     if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'go-mmproxy' }}
-    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       actions: read
@@ -149,7 +149,7 @@ jobs:
     needs:
     - go_mmproxy_decide
     - go_mmproxy_checks
-    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       packages: write
@@ -167,7 +167,7 @@ jobs:
   protonmailbridge_decide:
     name: Decide (protonmailbridge)
     if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'protonmailbridge' }}
-    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       actions: read
@@ -195,7 +195,7 @@ jobs:
     needs:
     - protonmailbridge_decide
     - protonmailbridge_checks
-    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       packages: write
@@ -213,7 +213,7 @@ jobs:
   crunchy_postgres_vectorchord_decide:
     name: Decide (crunchy-postgres-vectorchord)
     if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'crunchy-postgres-vectorchord' }}
-    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       actions: read
@@ -241,7 +241,7 @@ jobs:
     needs:
     - crunchy_postgres_vectorchord_decide
     - crunchy_postgres_vectorchord_checks
-    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       packages: write
@@ -260,7 +260,7 @@ jobs:
   crowdsec_agent_decide:
     name: Decide (crowdsec-agent)
     if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'crowdsec-agent' }}
-    uses: zekihan/release-workflows/.github/workflows/decide.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/decide.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       actions: read
@@ -288,7 +288,7 @@ jobs:
     needs:
     - crowdsec_agent_decide
     - crowdsec_agent_checks
-    uses: zekihan/release-workflows/.github/workflows/image.yaml@5fa11e0c1104623d17a191557a27e86a7715f778 # main
+    uses: zekihan/release-workflows/.github/workflows/image.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
     permissions:
       contents: read
       packages: write
