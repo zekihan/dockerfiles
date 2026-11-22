@@ -173,3 +173,64 @@ func TestNetnsChild(t *testing.T) {
 		t.Errorf("unexpected IPv6 routes:\n%s", out)
 	}
 }
+
+func TestAckErrorRejectsUnalignedTruncatedMessage(t *testing.T) {
+	resp := make([]byte, syscall.NLMSG_HDRLEN+1)
+	native.PutUint32(resp, uint32(len(resp)))
+	if err := ackError(resp, 1); err == nil {
+		t.Fatal("truncated padding accepted")
+	}
+}
+
+func TestNetlinkMessagesCarryRoutingParameters(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		msg    []byte
+		family byte
+		table  byte
+		scope  byte
+	}{
+		{"ipv4", localRouteMessage(syscall.AF_INET, 123, 7, 1), syscall.AF_INET, 123, rtScopeHost},
+		{"ipv6 large table", localRouteMessage(syscall.AF_INET6, 1000, 7, 1), syscall.AF_INET6, 0, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := tc.msg[syscall.NLMSG_HDRLEN:]
+			if body[0] != tc.family || body[4] != tc.table || body[6] != tc.scope || body[7] != rtnLocal {
+				t.Fatalf("unexpected route header: %x", body[:12])
+			}
+			if native.Uint16(body[14:]) != rtaTable || native.Uint32(body[16:]) != map[byte]uint32{123: 123, 0: 1000}[tc.table] || native.Uint16(body[22:]) != rtaOIF || native.Uint32(body[24:]) != 7 {
+				t.Fatalf("unexpected route attributes: %x", body[12:])
+			}
+		})
+	}
+}
+
+func TestAckErrorHandlesMultipleAndMalformedMessages(t *testing.T) {
+	ignored := message(syscall.NLMSG_NOOP, 0, 2, nil)
+	ack := message(syscall.NLMSG_ERROR, 0, 3, make([]byte, 4))
+	if err := ackError(append(ignored, ack...), 3); err != nil {
+		t.Fatalf("valid acknowledgement after unrelated message: %v", err)
+	}
+	for _, resp := range [][]byte{
+		make([]byte, syscall.NLMSG_HDRLEN),
+		message(syscall.NLMSG_ERROR, 0, 3, nil),
+	} {
+		if err := ackError(resp, 3); err == nil {
+			t.Errorf("accepted malformed response %x", resp)
+		}
+	}
+}
+
+func TestNetlinkConnection(t *testing.T) {
+	c, err := dial()
+	if err != nil {
+		t.Fatalf("open route netlink socket: %v", err)
+	}
+	c.close()
+	if err := c.do(func(seq uint32) []byte { return message(syscall.NLMSG_NOOP, 0, seq, nil) }); err == nil {
+		t.Fatal("send on closed socket succeeded")
+	}
+	if c.seq != 1 {
+		t.Fatalf("sequence = %d, want 1", c.seq)
+	}
+}

@@ -37,7 +37,7 @@ Go builder stage before cross-compilation. The upstream tests that exercise
 transparent loopback routing require Linux policy routes as configured by the
 upstream CI workflow. The image build itself
 cross-compiles with `CGO_ENABLED=0`, `GOOS=linux`, and buildx `TARGETARCH`, then
-copies only the binary and third-party notices into scratch.
+copies both binaries and third-party notices into scratch.
 
 The entrypoint is `/usr/local/bin/mmproxy-entrypoint`, a small static Go program
 that execs `/usr/local/bin/go-mmproxy` with the given arguments. By default it
