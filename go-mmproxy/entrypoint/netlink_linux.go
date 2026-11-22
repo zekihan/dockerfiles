@@ -110,6 +110,9 @@ func ackError(resp []byte, seq uint32) error {
 			}
 			return nil
 		}
+		if align4(length) > len(resp) {
+			return errors.New("malformed netlink response")
+		}
 		resp = resp[align4(length):]
 	}
 	return errors.New("no netlink acknowledgement")
