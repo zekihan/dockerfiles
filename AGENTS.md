@@ -50,7 +50,7 @@ When changing build args that the Dockerfile reads from `config.yaml` (dmarc's `
 ## Notable per-image patterns
 
 - **distroless** — builds a `scratch` image by copying CA certs and zoneinfo out of an Alpine builder. No shell or package manager.
-- **dmarc-report-converter** — clones the upstream Go repo at `sourceVersion` and cross-compiles by target platform. The tag must resolve to the reviewed `sourceCommit`.
+- **dmarc-report-converter** — clones the upstream Go repo at `sourceVersion` and cross-compiles by target platform. The tag must resolve to the reviewed `sourceCommit`. `patches/imap-connect-retry.patch` (IMAP connect retry with backoff, no nil-client logout) is applied and its Go tests run before compiling; a patch that no longer applies after a `sourceVersion` bump fails the build and must be refreshed.
 - **go-mmproxy** — applies the IPv6 family patch (OPS-214) and builds for the configured architectures.
 - **protonmailbridge** — builds on native amd64 and arm64 runners and runs as non-root UID 65532.
 - **crunchy-postgres-vectorchord** — amd64-only; smoke-tests the prepared artifact before publication.
