@@ -3,6 +3,8 @@
 The converter's source release is selected by `sourceVersion` in `config.yaml`.
 Its MIT license is copied from that release to `dmarc-report-converter/LICENSE`.
 Source: https://github.com/tierpod/dmarc-report-converter.
+The binary is built with `patches/imap-connect-retry.patch` from this
+repository applied, which modifies `cmd/dmarc-report-converter/imap.go`.
 
 The Go runtime's BSD-3-Clause license is copied from the build toolchain to
 `go/LICENSE`. Vendored dependency licenses, copyright notices, and module

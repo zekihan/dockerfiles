@@ -32,6 +32,8 @@ DMARC's `sourceVersion` and `sourceCommit` must be updated together after review
 the upstream release. The build fetches the release tag and fails before checkout
 or compilation if it resolves to a different commit. The verified commit is
 stored in the image at `/usr/share/dmarc-report-converter/source-revision`.
+The build then applies `dmarc-report-converter/patches/imap-connect-retry.patch`
+and runs its Go tests; a source bump that breaks the patch fails the build.
 Renovate version updates require a reviewed commit-pin update before they build.
 
 Run `python3 -m unittest discover -s tests -v` (Git and mikefarah/yq required)
