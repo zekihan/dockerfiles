@@ -14,12 +14,11 @@ class DmarcBuildPlatformTests(unittest.TestCase):
         instructions = (IMAGE / 'Dockerfile').read_text().replace('\\\n', '').splitlines()
         build = next(line.removeprefix('RUN ') for line in instructions
                      if line.startswith('RUN VERSION='))
-        build = (build.replace('/usr/local/bin/verify-source.sh', './verify-source.sh')
-                      .replace('/tmp/repo', './repo'))
+        build = build.replace('/tmp/repo', './repo')
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             shutil.copyfile(IMAGE / 'config.yaml', root / 'config.yaml')
-            (root / 'verify-source.sh').write_text('mkdir -p "$4"\n')
+            (root / 'repo').mkdir()
             go = root / 'go'
             go.write_text('#!/bin/sh\nprintf "%s/%s:%s\n" "$GOOS" "$GOARCH" "$GOARM"\n')
             go.chmod(0o755)

@@ -19,14 +19,25 @@ RUN apk add --no-cache \
 
 COPY config.yaml config.yaml
 COPY verify-source.sh /usr/local/bin/verify-source.sh
+# Retry the IMAP connect with backoff and never log out a nil client; new pods
+# are refused for a few seconds until network policy admits them. Recheck the
+# patch whenever sourceVersion changes: it must apply cleanly or the build fails.
+COPY patches/imap-connect-retry.patch /build/patches/imap-connect-retry.patch
+
+RUN SOURCE_COMMIT="$(yq '.sourceCommit' config.yaml)" && \
+    sh /usr/local/bin/verify-source.sh https://github.com/tierpod/dmarc-report-converter.git "$(yq '.sourceVersion' config.yaml)" "$SOURCE_COMMIT" /tmp/repo && \
+    cd /tmp/repo && \
+    git apply /build/patches/imap-connect-retry.patch && \
+    test "$(git diff --name-only)" = cmd/dmarc-report-converter/imap.go && \
+    test "$(git ls-files --others --exclude-standard -- . ':!source-revision')" = cmd/dmarc-report-converter/imap_connect_test.go && \
+    CGO_ENABLED=0 go vet -mod=vendor ./cmd/dmarc-report-converter && \
+    CGO_ENABLED=0 go test -mod=vendor -count=1 ./cmd/dmarc-report-converter
 
 RUN VERSION="$(yq '.sourceVersion' config.yaml)" && export VERSION && \
-    SOURCE_COMMIT="$(yq '.sourceCommit' config.yaml)" && \
     export GOOS="${TARGETOS:?}" GOARCH="${TARGETARCH:?}" CGO_ENABLED=0 && \
     if [ "${TARGETARCH}" = arm ] && [ -n "${TARGETVARIANT}" ]; then \
         export GOARM="${TARGETVARIANT#v}"; \
     fi && \
-    sh /usr/local/bin/verify-source.sh https://github.com/tierpod/dmarc-report-converter.git "$VERSION" "$SOURCE_COMMIT" /tmp/repo && \
     cd /tmp/repo && \
     go build -mod=vendor -ldflags="-s -w -X \"main.version=${VERSION}\"" -o "/usr/bin/dmarc-report-converter" ./cmd/dmarc-report-converter
 
