@@ -1,4 +1,4 @@
 version: v1.8.2 # renovate: depName=crowdsecurity/crowdsec datasource=docker
 versioning: upstream
 arch: linux/amd64,linux/arm64
-revision: 3
+revision: 4
