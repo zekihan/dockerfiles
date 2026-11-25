@@ -4,7 +4,7 @@ This file provides guidance to AI Agents when working with code in this reposito
 
 ## Overview
 
-A monorepo of independent container images: `distroless`, `dmarc-report-converter`,
+A monorepo of independent container images: `distroless`,
 `go-mmproxy`, `protonmailbridge`, `crunchy-postgres-vectorchord`, and `crowdsec-agent`. Each top-level
 image directory contains its Dockerfile and build configuration. The shared
 `.github/workflows/publish.yaml` workflow handles every image; adding an image
@@ -20,9 +20,7 @@ Every image directory contains:
   - `arch` — comma-separated buildx platforms (e.g. `linux/amd64,linux/arm64`).
   - `versioning` — `upstream` for images that wrap an upstream release, `own` for images with no upstream (`distroless`). Required; the publisher refuses a missing or inconsistent profile.
   - `revision` — positive packaging revision, required with `versioning: upstream` and forbidden with `versioning: own`; a new `version-rN` identity requests an immutable release. Own images bump their `X.Y.Z` `version` instead. Use manual force for an edge-only rebuild.
-  - `sourceVersion` (dmarc only) — git tag of upstream source to build from.
-  - `sourceCommit` (dmarc only) — reviewed full commit that the source tag must resolve to; update alongside `sourceVersion`.
-  - `# renovate: depName=...` trailing comments on `version`/`sourceVersion` tell Renovate which upstream to track. Without this comment the version is manual (for example, `distroless` uses a hand-set version).
+  - `# renovate: depName=...` trailing comments on `version` tell Renovate which upstream to track. Without this comment the version is manual (for example, `distroless` uses a hand-set version).
 
 ## CI / build pipeline
 
@@ -39,18 +37,13 @@ Validate image changes by building the image. For example:
 
 ```sh
 docker buildx build --platform "$(yq '.arch' distroless/config.yaml)" -t local/distroless distroless
-# dmarc reads config.yaml at build time, so point at its directory:
-docker build dmarc-report-converter
 ```
 
 Run `python3 -m unittest discover -s tests -v` for release security checks (requires Git and mikefarah/yq).
 
-When changing build args that the Dockerfile reads from `config.yaml` (dmarc's `sourceVersion`), keep `config.yaml` and the Dockerfile in sync.
-
 ## Notable per-image patterns
 
 - **distroless** — builds a `scratch` image by copying CA certs and zoneinfo out of an Alpine builder. No shell or package manager.
-- **dmarc-report-converter** — clones the upstream Go repo at `sourceVersion` and cross-compiles by target platform. The tag must resolve to the reviewed `sourceCommit`. `patches/imap-connect-retry.patch` (IMAP connect retry with backoff, no nil-client logout) is applied and its Go tests run before compiling; a patch that no longer applies after a `sourceVersion` bump fails the build and must be refreshed.
 - **go-mmproxy** — applies the IPv6 family patch (OPS-214) and builds for the configured architectures.
 - **protonmailbridge** — builds on native amd64 and arm64 runners and runs as non-root UID 65532.
 - **crunchy-postgres-vectorchord** — amd64-only; smoke-tests the prepared artifact before publication.

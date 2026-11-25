@@ -10,7 +10,6 @@ name: Publish images
         options:
         - all
         - distroless
-        - dmarc-report-converter
         - go-mmproxy
         - protonmailbridge
         - crunchy-postgres-vectorchord
@@ -68,52 +67,6 @@ jobs:
       fingerprint: ${{ needs.distroless_decide.outputs.fingerprint }}
       context: distroless
       platforms: ${{ needs.distroless_checks.outputs.platforms }}
-      native-arm: false
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  dmarc_report_converter_decide:
-    name: Decide (dmarc-report-converter)
-    if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'dmarc-report-converter' }}
-    uses: zekihan/release-workflows/.github/workflows/decide.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
-    permissions:
-      contents: read
-      actions: read
-      packages: read
-    with:
-      image: dmarc-report-converter
-      mode: declarative
-      version-file: dmarc-report-converter/config.yaml
-      input-paths: '["dmarc-report-converter", ".github/workflows", ".github/scripts", "tests"]'
-      force: ${{ inputs.force || false }}
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  dmarc_report_converter_checks:
-    name: Checks (dmarc-report-converter)
-    needs: dmarc_report_converter_decide
-    if: ${{ needs.dmarc_report_converter_decide.outputs.build == 'true' }}
-    uses: ./.github/workflows/checks.yaml
-    permissions:
-      contents: read
-    with:
-      image: dmarc-report-converter
-  dmarc_report_converter_publish:
-    name: Image (dmarc-report-converter)
-    needs:
-    - dmarc_report_converter_decide
-    - dmarc_report_converter_checks
-    uses: zekihan/release-workflows/.github/workflows/image.yaml@9e0b7240dc7ad7cb6a91d273fbdc3b7dab56b136 # main
-    permissions:
-      contents: read
-      packages: write
-    with:
-      image: dmarc-report-converter
-      mode: declarative
-      version: ${{ needs.dmarc_report_converter_decide.outputs.version }}
-      fingerprint: ${{ needs.dmarc_report_converter_decide.outputs.fingerprint }}
-      context: dmarc-report-converter
-      platforms: ${{ needs.dmarc_report_converter_checks.outputs.platforms }}
       native-arm: false
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
