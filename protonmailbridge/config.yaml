@@ -3,4 +3,4 @@ version: 3.27.2
 versioning: upstream
 sourceRevision: 3e9f85aa3c676a573b64b1d90829970ded26dbfa
 arch: linux/amd64,linux/arm64
-revision: 1
+revision: 2

@@ -1,4 +1,4 @@
-FROM golang:1.27.2-bookworm@sha256:5cf287a799e6b94384bad13d16b14904c531f51ba65792237e122ce42b392f61 AS build
+FROM golang:1.27.4-bookworm@sha256:ce59b41415e2524ae99926fe1f37ce48ba8c194dcbd2a56a65436cdcefa2bd34 AS build
 RUN apt-get update && apt-get install -y --no-install-recommends libsecret-1-dev libfido2-dev libcbor-dev libssl-dev pkg-config \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
@@ -14,6 +14,10 @@ RUN git apply --check /patches/*.patch \
     && git apply /patches/*.patch \
     && gofmt -w internal/services/imapsmtpserver/listener*.go \
     && go test ./internal/services/imapsmtpserver -run 'Test(Configured|Invalid)ListenerAddress' -count=1
+# Refresh the Go dependencies with fixable HIGH advisories now that the
+# builder carries a fixed stdlib (Go 1.27.4): x/crypto, x/net, x/text, grpc.
+RUN go get golang.org/x/crypto@v0.58.0 golang.org/x/net@v0.62.0 golang.org/x/text@v0.43.0 google.golang.org/grpc@v1.83.2 \
+    && go mod tidy
 # Build only Bridge. The upstream launcher can run binaries cached on the state volume.
 RUN make proton-bridge
 
