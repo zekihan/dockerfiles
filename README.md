@@ -28,18 +28,8 @@ original artifacts. Full rebuilds can produce different bytes and must not repla
 an immutable release. After expiry, recover the original artifacts or declare a new
 revision. Registry updates are not transactional.
 
-DMARC's `sourceVersion` and `sourceCommit` must be updated together after reviewing
-the upstream release. The build fetches the release tag and fails before checkout
-or compilation if it resolves to a different commit. The verified commit is
-stored in the image at `/usr/share/dmarc-report-converter/source-revision`.
-The build then applies `dmarc-report-converter/patches/imap-connect-retry.patch`
-and runs its Go tests; a source bump that breaks the patch fails the build.
-Renovate version updates require a reviewed commit-pin update before they build.
-
 Run `python3 -m unittest discover -s tests -v` (Git and mikefarah/yq required)
-and `shellcheck dmarc-report-converter/verify-source.sh` locally. The tests use
-temporary Git repositories to check moved tags and repeated source identity;
-they never log in to a registry or publish an image.
+locally. The tests never log in to a registry or publish an image.
 
 ## Licensing
 
@@ -53,7 +43,6 @@ License labels summarize the identified components; they are not a complete
 inventory of every dependency in an upstream base image.
 
 - [go-mmproxy notices](go-mmproxy/licenses/NOTICE.md)
-- [DMARC converter notices](dmarc-report-converter/licenses/NOTICE.md)
 - [distroless notices](distroless/licenses/NOTICE.md)
 - [Crunchy PostgreSQL / VectorChord notices](crunchy-postgres-vectorchord/licenses/NOTICE.md)
 - [CrowdSec agent](crowdsec-agent/README.md) ([notices](crowdsec-agent/licenses/NOTICE.md))
