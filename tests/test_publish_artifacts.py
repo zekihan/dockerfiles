@@ -18,7 +18,7 @@ class PublicationTests(unittest.TestCase):
     def test_every_publisher_depends_on_checks_and_the_pinned_decision(self):
         doc = workflow('publish')
         publishers = {name: job for name, job in doc['jobs'].items() if name.endswith('_publish')}
-        self.assertEqual(len(publishers), 5)
+        self.assertEqual(len(publishers), 4)
         for name, job in publishers.items():
             key = name.removesuffix('_publish')
             self.assertEqual(job['needs'], [key + '_decide', key + '_checks'])

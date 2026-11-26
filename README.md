@@ -31,6 +31,8 @@ revision. Registry updates are not transactional.
 Run `python3 -m unittest discover -s tests -v` (Git and mikefarah/yq required)
 locally. The tests never log in to a registry or publish an image.
 
+The mmproxy image is published from [zekihan/mmproxy](https://github.com/zekihan/mmproxy). Historical go-mmproxy tags remain available.
+
 ## Licensing
 
 Original Dockerfiles, scripts, configuration, and documentation in this repository
@@ -42,7 +44,6 @@ Each image includes its notices under `/usr/share/licenses/dockerfiles/`.
 License labels summarize the identified components; they are not a complete
 inventory of every dependency in an upstream base image.
 
-- [go-mmproxy notices](go-mmproxy/licenses/NOTICE.md)
 - [distroless notices](distroless/licenses/NOTICE.md)
 - [Crunchy PostgreSQL / VectorChord notices](crunchy-postgres-vectorchord/licenses/NOTICE.md)
 - [CrowdSec agent](crowdsec-agent/README.md) ([notices](crowdsec-agent/licenses/NOTICE.md))
