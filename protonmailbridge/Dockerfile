@@ -21,7 +21,7 @@ RUN go get golang.org/x/crypto@v0.58.0 golang.org/x/net@v0.62.0 golang.org/x/tex
 # Build only Bridge. The upstream launcher can run binaries cached on the state volume.
 RUN make proton-bridge
 
-FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
+FROM debian:bookworm-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl pass gnupg libsecret-1-0 libfido2-1 libcbor0.8 util-linux \
     && rm -rf /var/lib/apt/lists/*
 # Bridge keeps absolute paths under HOME in its encrypted vault, so the state
