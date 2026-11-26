@@ -40,7 +40,7 @@ jobs:
         bash -n crowdsec-agent/smoke-test.sh
         sh -n crowdsec-agent/apply-whitelists.sh
         shellcheck crunchy-postgres-vectorchord/smoke-test.sh crowdsec-agent/smoke-test.sh crowdsec-agent/apply-whitelists.sh
-    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+    - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
       if: ${{ inputs.image == '' || inputs.image == 'crowdsec-agent' }}
       with:
         go-version-file: crowdsec-agent/supervisor/go.mod
@@ -52,7 +52,7 @@ jobs:
         CGO_ENABLED: '0'
         GOTOOLCHAIN: local
       run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
-    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+    - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
       if: ${{ inputs.image == '' || inputs.image == 'go-mmproxy' }}
       with:
         go-version-file: go-mmproxy/entrypoint/go.mod
