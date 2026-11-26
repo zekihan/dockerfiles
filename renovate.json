@@ -4,12 +4,6 @@
     "config:recommended",
     "github>zekihan/renovate-config"
   ],
-  "hostRules": [
-    {
-      "hostType": "github",
-      "token": "{{ secrets.github }}"
-    }
-  ],
   "packageRules": [
     {
       "matchManagers": [
