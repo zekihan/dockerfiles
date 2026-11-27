@@ -52,15 +52,3 @@ jobs:
         CGO_ENABLED: '0'
         GOTOOLCHAIN: local
       run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
-    - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
-      if: ${{ inputs.image == '' || inputs.image == 'go-mmproxy' }}
-      with:
-        go-version-file: go-mmproxy/entrypoint/go.mod
-        cache: false
-    - name: Scan go-mmproxy entrypoint
-      if: ${{ inputs.image == '' || inputs.image == 'go-mmproxy' }}
-      working-directory: go-mmproxy/entrypoint
-      env:
-        CGO_ENABLED: '0'
-        GOTOOLCHAIN: local
-      run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...

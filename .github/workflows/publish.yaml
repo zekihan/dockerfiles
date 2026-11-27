@@ -10,7 +10,6 @@ name: Publish images
         options:
         - all
         - distroless
-        - go-mmproxy
         - protonmailbridge
         - crunchy-postgres-vectorchord
         - crowdsec-agent
@@ -67,52 +66,6 @@ jobs:
       fingerprint: ${{ needs.distroless_decide.outputs.fingerprint }}
       context: distroless
       platforms: ${{ needs.distroless_checks.outputs.platforms }}
-      native-arm: false
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  go_mmproxy_decide:
-    name: Decide (go-mmproxy)
-    if: ${{ github.event_name == 'schedule' || inputs.image == 'all' || inputs.image == 'go-mmproxy' }}
-    uses: zekihan/release-workflows/.github/workflows/decide.yaml@98a85ab2b0ae4dd702aa142b1369277404f124df # main
-    permissions:
-      contents: read
-      actions: read
-      packages: read
-    with:
-      image: go-mmproxy
-      mode: declarative
-      version-file: go-mmproxy/config.yaml
-      input-paths: '["go-mmproxy", ".github/workflows", ".github/scripts", "tests"]'
-      force: ${{ inputs.force || false }}
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  go_mmproxy_checks:
-    name: Checks (go-mmproxy)
-    needs: go_mmproxy_decide
-    if: ${{ needs.go_mmproxy_decide.outputs.build == 'true' }}
-    uses: ./.github/workflows/checks.yaml
-    permissions:
-      contents: read
-    with:
-      image: go-mmproxy
-  go_mmproxy_publish:
-    name: Image (go-mmproxy)
-    needs:
-    - go_mmproxy_decide
-    - go_mmproxy_checks
-    uses: zekihan/release-workflows/.github/workflows/image.yaml@98a85ab2b0ae4dd702aa142b1369277404f124df # main
-    permissions:
-      contents: read
-      packages: write
-    with:
-      image: go-mmproxy
-      mode: declarative
-      version: ${{ needs.go_mmproxy_decide.outputs.version }}
-      fingerprint: ${{ needs.go_mmproxy_decide.outputs.fingerprint }}
-      context: go-mmproxy
-      platforms: ${{ needs.go_mmproxy_checks.outputs.platforms }}
       native-arm: false
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
